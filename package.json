@@ -1,0 +1,32 @@
+{
+  "name": "rawconnect",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@react-navigation/stack": "^7.1.1",
+    "add": "^2.0.6",
+    "expo": "~52.0.30",
+    "expo-status-bar": "~2.0.1",
+    "install": "^0.13.0",
+    "native-base": "^3.4.28",
+    "npm": "^11.1.0",
+    "react": "18.3.1",
+    "react-native": "0.76.6",
+    "react-native-paper": "^5.13.1",
+    "react-native-safe-area-context": "^5.2.0",
+    "react-native-screens": "^4.6.0",
+    "react-native-svg": "^15.11.1",
+    "react-native-vector-icons": "^10.2.0",
+    "yarn": "^1.22.22"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
+  },
+  "private": true
+}
