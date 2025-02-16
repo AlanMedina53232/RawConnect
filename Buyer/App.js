@@ -13,7 +13,7 @@ import {
 import { Button, Provider as PaperProvider, Text } from "react-native-paper";
 
 // Importa la pantalla de perfil
-import ProfileScreen from "./componentes/ProfileScreen"; 
+import ProfileScreen from "./components/ProfileScreen"; 
 
 const Drawer = createDrawerNavigator();
 const { width } = Dimensions.get("window");
