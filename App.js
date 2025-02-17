@@ -25,9 +25,12 @@ function App() {
             ),
           })}
         />
-        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Login" component={Login}/>
         <Stack.Screen name="Register" component={Register}/>
-        <Stack.Screen name="MainBuyer" component={MainBuyer} />
+        <Stack.Screen name="MainBuyer" component={MainBuyer}
+        options={{
+          headerShown: false,  // Esto oculta el encabezado
+        }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
