@@ -56,7 +56,13 @@ export default function Login({ navigation }) {  // Recibe la prop `navigation`
               </TouchableOpacity>
             </Text>
 
-            <Button icon="account" mode="contained" onPress={handlePress} style={{ margin: 25, backgroundColor: '#4f4f4f' }}>Login</Button>
+            <Button 
+            icon="account" 
+            mode="contained" 
+            onPress={() => navigation.navigate('MainBuyer')} 
+            style={{ margin: 25, backgroundColor: '#4f4f4f' }}>
+              Login
+              </Button>
           </Card.Content>
 
           <StatusBar style="auto" />

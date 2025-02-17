@@ -1,6 +1,6 @@
 
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { NavigationContainer } from "@react-navigation/native";
+
 import React from "react";
 import {
   Dimensions,
@@ -13,7 +13,7 @@ import {
 import { Button, Provider as PaperProvider, Text } from "react-native-paper";
 
 // Importa la pantalla de perfil
-import ProfileScreen from "./components/ProfileScreen"; 
+import ProfileScreen from "./Components/ProfileScreen"; 
 
 const Drawer = createDrawerNavigator();
 const { width } = Dimensions.get("window");
@@ -141,10 +141,9 @@ const DrawerContent = (props) => (
   </GradientBackground>
 );
 
-export default function App() {
+export default function MainBuyer() {
   return (
     <PaperProvider>
-      <NavigationContainer>
         <Drawer.Navigator
           drawerContent={(props) => <DrawerContent {...props} />}
         >
@@ -176,7 +175,6 @@ export default function App() {
             }}
           />
         </Drawer.Navigator>
-      </NavigationContainer>
     </PaperProvider>
   );
 }

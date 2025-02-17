@@ -6,6 +6,7 @@ import { Text } from 'react-native-paper';
 import Principal from './screens/principal';  // Pantalla Principal
 import Login from './screens/login';  // Pantalla Login
 import Register from './screens/register';
+import MainBuyer from './Buyer/MainBuyer';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,7 @@ function App() {
         />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register}/>
+        <Stack.Screen name="MainBuyer" component={MainBuyer} />
       </Stack.Navigator>
     </NavigationContainer>
   );

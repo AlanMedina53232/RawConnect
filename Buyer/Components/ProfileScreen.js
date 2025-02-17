@@ -66,7 +66,7 @@ const ProfileScreen = () => {
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
-                <Avatar.Image size={120} source={require("../assets/default-avatar.png")} />
+                <Avatar.Image size={120} source={require("../Components/default-avatar.png")} />
                 <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
                     <Icon name={isEditing ? "check" : "pencil"} size={24} color={theme.colors.primary} />
                 </TouchableOpacity>
