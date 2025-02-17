@@ -5,6 +5,7 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import Principal from './screens/principal';  // Pantalla Principal
 import Login from './screens/login';  // Pantalla Login
+import Register from './screens/register';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +25,7 @@ function App() {
           })}
         />
         <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Register" component={Register}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -38,6 +40,7 @@ const styles = StyleSheet.create({
   },
   link: {
     color: '#444141',
-    marginHorizontal: 15,
+    marginHorizontal: 20,
+    textDecorationLine: 'underline',
   },
 });
