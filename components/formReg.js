@@ -1,23 +1,30 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { NativeBaseProvider, Box, Input, Button, Text, FormControl } from "native-base";
+import { NativeBaseProvider, Box, Input, Button, Text, FormControl, Alert } from "native-base";
 import { auth } from '../config/fb.js';  // Importamos el objeto auth desde la configuración de Firebase
 import { createUserWithEmailAndPassword } from "firebase/auth";  // Importamos la función para crear el usuario
 
 export default function Reg() {
+  const [name, setName] = useState("");
+  const [midleName, setMidleName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [passConf, setPassConf] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [successMessage, setSuccessMessage] = useState("");  // Nueva variable de estado para el mensaje de éxito
+  
   const handleSubmit = async () => {
     setError("");  // Limpiar cualquier mensaje de error anterior
+    setSuccessMessage("");  // Limpiar cualquier mensaje de éxito anterior
     setLoading(true);  // Iniciar el estado de carga
 
     // Verificar si los campos están completos
     if (!email || !pass || !passConf) {
-      setError("Por favor, complete todos los campos.");
+      setError("Please complete all fields.");
       setLoading(false);
       return;
     }
@@ -27,21 +34,21 @@ export default function Reg() {
 
     // Validar el correo electrónico
     if (!emailRegex.test(email)) {
-      setError("Por favor, ingrese un correo electrónico válido.");
+      setError("Please enter a valid email address.");
       setLoading(false);
       return;
     }
 
     // Validar que las contraseñas coincidan
     if (pass !== passConf) {
-      setError("Las contraseñas no coinciden.");
+      setError("Passwords do not match.");
       setLoading(false);
       return;
     }
 
     // Comprobar si la contraseña tiene al menos 10 caracteres
     if (pass.length < 10) {
-      setError("La contraseña debe tener al menos 10 caracteres.");
+      setError("The password must be at least 10 characters long.");
       setLoading(false);
       return;
     }
@@ -51,7 +58,7 @@ export default function Reg() {
 
     // Validar la contraseña con la expresión regular
     if (!passwordRegex.test(pass)) {
-      setError("La contraseña debe tener al menos 10 caracteres, una mayúscula, una minúscula, un número y un carácter especial.");
+      setError("The password must have at least 10 characters, one uppercase, one lowercase, one number and one special character..");
       setLoading(false);
       return;
     }
@@ -62,19 +69,19 @@ export default function Reg() {
     try {
       // Intentamos crear un usuario con el correo y la contraseña
       await createUserWithEmailAndPassword(auth, email, pass);
-      console.log("Usuario registrado con éxito");
+      setSuccessMessage("User successfully registered");  // Mostrar mensaje de éxito
     } catch (error) {
       let errorMessage = error.message;
       
       // Manejo de errores de Firebase con mensajes amigables
       if (errorMessage.includes("email-already-in-use")) {
-        setError("El correo electrónico ya está registrado.");
+        setError("The e-mail address is already registered.");
       } else if (errorMessage.includes("weak-password")) {
-        setError("La contraseña es demasiado débil.");
+        setError("Password is too weak.");
       } else if (errorMessage.includes("invalid-email")) {
-        setError("El correo electrónico no es válido.");
+        setError("The e-mail address is invalid.");
       } else {
-        setError("Error al registrar el usuario, por favor intente nuevamente.");
+        setError("Error registering the user, please try again..");
       }
     } finally {
       setLoading(false);  // Terminar el estado de carga
@@ -84,6 +91,58 @@ export default function Reg() {
   return (
     <View style={styles.container}>
       <Box width="100%" maxWidth="400px">
+        <FormControl isRequired>
+          <FormControl.Label>Name</FormControl.Label>
+          <Input
+          variant="underlined"
+          placeholder="Name"
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+          />
+        </FormControl>
+        <FormControl>
+          <FormControl.Label>Middle Name</FormControl.Label>
+          <Input
+          variant="underlined"
+          placeholder="Middle Name"
+          value={midleName}
+          onChangeText={setMidleName}
+          style={styles.input}
+          />
+        </FormControl>
+        <FormControl >
+          <FormControl.Label>Last Name</FormControl.Label>
+          <Input
+          variant="underlined"
+          placeholder="Last Name"
+          value={lastName}
+          onChangeText={setLastName}
+          style={styles.input}
+          />
+        </FormControl>
+        <FormControl isRequired>
+          <FormControl.Label>Phone</FormControl.Label>
+          <Input
+          variant="underlined"
+          placeholder="Phone"
+          value={phone}
+          onChangeText={setPhone}
+          style={styles.input}
+          />
+          </FormControl>
+
+          <FormControl isRequired>
+            <FormControl.Label >Address</FormControl.Label>
+            <Input
+            variant="underlined"
+            placeholder="Address"
+            value={address}
+            onChangeText={setAddress}
+            style={styles.input}
+            />
+          </FormControl>
+
         {/* Campo de Usuario */}
         <FormControl isInvalid={!!error}>
           <FormControl.Label>Email</FormControl.Label>
@@ -125,6 +184,13 @@ export default function Reg() {
         {/* Mensaje de error */}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+        {/* Mensaje de éxito */}
+        {successMessage ? (
+          <Alert status="success" colorScheme="success">
+            <Text style={styles.successText}>{successMessage}</Text>
+          </Alert>
+        ) : null}
+
         {/* Botón de Registro */}
         <Button 
           style={styles.button} 
@@ -154,6 +220,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "red",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  successText: {
+    color: "green",
     textAlign: "center",
     marginBottom: 15,
   },

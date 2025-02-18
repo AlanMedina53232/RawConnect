@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBar: {
-    width: '100%',
+    width: '110%',
     flexDirection: "row",
     justifyContent: "space-around",
     marginTop: 10,
