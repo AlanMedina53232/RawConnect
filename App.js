@@ -1,12 +1,12 @@
-import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import * as React from 'react';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
-import Principal from './screens/principal';  // Pantalla Principal
-import Login from './screens/login';  // Pantalla Login
-import Register from './screens/register';
 import MainBuyer from './Buyer/MainBuyer';
+import Login from './screens/login'; // Pantalla Login
+import Principal from './screens/principal'; // Pantalla Principal
+import Register from './screens/register';
 
 const Stack = createStackNavigator();
 
@@ -25,12 +25,12 @@ function App() {
             ),
           })}
         />
-        <Stack.Screen name="Login" component={Login}/>
-        <Stack.Screen name="Register" component={Register}/>
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="MainBuyer" component={MainBuyer}
-        options={{
-          headerShown: false,  // Esto oculta el encabezado
-        }} />
+          options={{
+            headerShown: false,  // Esto oculta el encabezado
+          }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
