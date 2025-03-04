@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Dimensions } from 'react-native';
 import { Box, NativeBaseProvider, Text, Pressable, useColorModeValue } from "native-base";
 import { TabView, SceneMap } from 'react-native-tab-view'; 
+import { ScrollView } from 'react-native';
 
 import { Card, Title, Paragraph } from 'react-native-paper'; 
 import Footer from "../components/Footer";
@@ -11,20 +12,28 @@ import Reg from "../components/formReg";
 export default function Register() {
 
   const FirstRoute = () => (
-    <Box flex={1} justifyContent="center" alignItems="center" my="4">
+    <Box flex={1} my="4">
       <Card style={styles.card}>
         <Card.Content style={styles.cardContent}>
-          <Reg />
+          <ScrollView contentContainerStyle={styles.scrollView}>
+            <Box width="100%">
+              <Reg />
+            </Box>
+          </ScrollView>
         </Card.Content>
       </Card>
     </Box>
   );
-
+  
   const SecondRoute = () => (
-    <Box flex={1} justifyContent="center" alignItems="center" my="4">
+    <Box flex={1} my="4">
       <Card style={styles.card}>
         <Card.Content style={styles.cardContent}>
-          <Reg />
+          <ScrollView contentContainerStyle={styles.scrollView}>
+            <Box width="100%">
+              <Reg />
+            </Box>
+          </ScrollView>
         </Card.Content>
       </Card>
     </Box>
@@ -106,8 +115,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f7f7f7', // Fondo gris claro para la pantalla
   },
+  scrollView: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
   card: {
-    width: '90%',
+    width: '95%', // Hace que la card use más ancho en la pantalla
     marginTop: 10,
     borderRadius: 10,
     shadowColor: "#000",
@@ -120,7 +134,8 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
+    width: '100%', // Ajusta el contenido de la tarjeta al ancho
+  },  
   tabBar: {
     width: '110%',
     flexDirection: "row",
