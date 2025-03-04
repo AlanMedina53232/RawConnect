@@ -1,15 +1,22 @@
-import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
-import { createDrawerNavigator } from "@react-navigation/drawer"
-import { LinearGradient } from "expo-linear-gradient"
-import { Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native"
-import { Button, Text } from "react-native-paper"
+import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import { LinearGradient } from "expo-linear-gradient";
+import { Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Button, Text } from "react-native-paper";
+import Agricultural from "./Components/Agricultural";
+import Chemicals from "./Components/Chemicals";
+import Forestry from "./Components/Forestry";
+import Minerals from "./Components/Minerals";
 
-// Import ProfileScreen (assuming it's in the same directory)
-import ProfileScreen from "./Components/ProfileScreen"
 
-const { width } = Dimensions.get("window")
-const Drawer = createDrawerNavigator()
 
+
+import ProfileScreen from "./Components/ProfileScreen";
+
+const { width } = Dimensions.get("window");
+const Drawer = createDrawerNavigator();
+
+// 🌈 Fondo con gradiente
 const GradientBackground = ({ colors, style, children }) => (
   <View style={[styles.gradientContainer, style]}>
     {colors.map((color, index) => (
@@ -26,10 +33,11 @@ const GradientBackground = ({ colors, style, children }) => (
     ))}
     {children}
   </View>
-)
+);
 
-const CategoryCard = ({ title, icon, imagePrompt }) => (
-  <TouchableOpacity style={styles.categoryCard}>
+// 📦 Tarjeta de categoría (ahora acepta la prop onPress)
+const CategoryCard = ({ title, icon, imagePrompt, onPress }) => (
+  <TouchableOpacity style={styles.categoryCard} onPress={onPress}>
     <Image
       source={{ uri: `https://api.a0.dev/assets/image?text=${encodeURIComponent(imagePrompt)}&aspect=16:9` }}
       style={styles.categoryBackground}
@@ -41,8 +49,9 @@ const CategoryCard = ({ title, icon, imagePrompt }) => (
       </View>
     </LinearGradient>
   </TouchableOpacity>
-)
+);
 
+// 🏠 Pantalla principal (HomeScreen)
 const HomeScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container}>
@@ -54,24 +63,29 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.categoriesContainer}>
         <Text style={styles.sectionTitle}>Categorías</Text>
         <View style={styles.categoriesGrid}>
+          {/* 🔗 Ahora el botón de Productos Agrícolas navega a la pantalla "Categorys" */}
           <CategoryCard
             title="Productos Agrícolas"
             icon={<MaterialCommunityIcons name="tractor" size={40} color="white" />}
+            onPress={() => navigation.navigate("Agricultural")}
             imagePrompt="modern agricultural machinery in a vast golden wheat field at sunset, dramatic lighting"
           />
           <CategoryCard
             title="Minerales y Metales"
             icon={<MaterialCommunityIcons name="mine" size={40} color="white" />}
+            onPress={() => navigation.navigate("Minerals")}
             imagePrompt="industrial mining operation with massive machinery and raw minerals, dramatic industrial scene"
           />
           <CategoryCard
             title="Productos Forestales"
             icon={<FontAwesome5 name="tree" size={40} color="white" />}
+            onPress={() => navigation.navigate("Forestry")}
             imagePrompt="sustainable forestry operation with lumber mill and forest management, morning mist"
           />
           <CategoryCard
             title="Químicos y Petroquímicos"
             icon={<MaterialIcons name="science" size={40} color="white" />}
+            onPress={() => navigation.navigate("Chemicals")}
             imagePrompt="modern chemical plant with sophisticated equipment and blue lighting, industrial scene"
           />
         </View>
@@ -88,9 +102,10 @@ const HomeScreen = ({ navigation }) => {
         </ScrollView>
       </View>
     </ScrollView>
-  )
-}
+  );
+};
 
+// 📋 Menú lateral (DrawerContent)
 const DrawerContent = (props) => (
   <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.drawerContent}>
     <View style={styles.drawerHeader}>
@@ -118,8 +133,9 @@ const DrawerContent = (props) => (
       </Button>
     </View>
   </GradientBackground>
-)
+);
 
+// 🗂️ Configuración del Drawer Navigator
 const MainBuyer = () => {
   return (
     <Drawer.Navigator
@@ -136,9 +152,14 @@ const MainBuyer = () => {
     >
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
+      <Drawer.Screen name="Agricultural" component={Agricultural} options={{ title: "Agricultural" }} />
+      <Drawer.Screen name="Chemicals" component={Chemicals} options={{ title: "Chemicals" }} />
+      <Drawer.Screen name="Forestry" component={Forestry} options={{ title: "Forestry" }} />
+      <Drawer.Screen name="Minerals" component={Minerals} options={{ title: "Minerals" }} />
+
     </Drawer.Navigator>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
