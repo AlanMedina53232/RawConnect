@@ -7,9 +7,7 @@ import Agricultural from "./Components/Agricultural";
 import Chemicals from "./Components/Chemicals";
 import Forestry from "./Components/Forestry";
 import Minerals from "./Components/Minerals";
-
-
-
+import ProductDetails from "./Components/ProductDetails";
 
 import ProfileScreen from "./Components/ProfileScreen";
 
@@ -156,6 +154,7 @@ const MainBuyer = () => {
       <Drawer.Screen name="Chemicals" component={Chemicals} options={{ title: "Chemicals" }} />
       <Drawer.Screen name="Forestry" component={Forestry} options={{ title: "Forestry" }} />
       <Drawer.Screen name="Minerals" component={Minerals} options={{ title: "Minerals" }} />
+      <Drawer.Screen name="ProductDetails" component={ProductDetails} options={{ title: "ProductDetails" }} />
 
     </Drawer.Navigator>
   );
