@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f7f7', // Fondo gris claro para la pantalla
   },
   card: {
-    width: '90%',
+    width: '95%',
     marginTop: 10,
     borderRadius: 10,
     shadowColor: "#000",
