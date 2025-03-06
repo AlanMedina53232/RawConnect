@@ -121,8 +121,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   card: {
-    width: '95%', // Hace que la card use más ancho en la pantalla
-    marginTop: 10,
+    width: '90%',
+    marginTop: 20,
+    marginRight: 20,
+    marginLeft: 20,
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

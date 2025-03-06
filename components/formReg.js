@@ -153,8 +153,8 @@ export default function Reg() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, justifyContent: 'center', alignItems: 'center' },
-  input: { marginBottom: 10, fontSize: 16 },
+  container: { width: '200',padding: 5, justifyContent: 'center', alignItems: 'center' },
+  input: { marginBottom: 10, fontSize: 16, marginHorizontal: 10 },
   imagePicker: { marginVertical: 10, padding: 10, backgroundColor: '#ccc', alignItems: 'center' },
   image: { width: 100, height: 100, borderRadius: 50, marginTop: 10 },
   errorText: { color: "red", textAlign: "center", marginBottom: 15 },
