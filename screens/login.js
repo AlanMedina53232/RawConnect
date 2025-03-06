@@ -1,27 +1,46 @@
 import React, { useState } from "react";
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
-import {Text, Card, Button } from 'react-native-paper';
-import { Input, NativeBaseProvider, Box} from 'native-base';
-
+import { Text, Card, Button } from 'react-native-paper';
+import { Input, NativeBaseProvider, Box } from 'native-base';
+import { auth, signInWithEmailAndPassword, db, doc, getDoc } from '../config/fb.js';  // Importar Firestore
 import Footer from '../components/Footer';
 
-export default function Login({ navigation }) {  // Recibe la prop `navigation`
+export default function Login({ navigation }) {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [displayText, setDisplayText] = useState({
     user: "",
     pass: "",
   });
+  const [error, setError] = useState("");
 
-  const handlePress = () => {
-    setDisplayText({
-      user: user,
-      pass: pass,
-    });
+  const handleLogin = async () => {
+    try {
 
-    setUser("");
-    setPass("");
+      const userCredential = await signInWithEmailAndPassword(auth, user, pass);  
+      const currentUser = userCredential.user;
+      
+      const docRef = doc(db, "Roles", currentUser.email); 
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const role = docSnap.data().role; 
+
+        
+        if (role === 1) { 
+          navigation.navigate('MainBuyer');  
+        } else if (role === 2) { 
+          navigation.navigate('MainProducer');  
+        } else {
+          setError("Invalid role assigned to this user.");
+        }
+      } else {
+        setError("User not found in roles collection.");
+      }
+    } catch (error) {
+      setError("Login failed. Please check your credentials.");
+    }
   };
 
   return (
@@ -35,7 +54,7 @@ export default function Login({ navigation }) {  // Recibe la prop `navigation`
             </Card.Content>
             <Input
               variant="underlined"
-              placeholder="User"
+              placeholder="Email"
               value={user}
               onChangeText={setUser}
               style={styles.input}
@@ -49,6 +68,8 @@ export default function Login({ navigation }) {  // Recibe la prop `navigation`
               secureTextEntry={true}
             />
             
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
             {/* Separando el texto y el TouchableOpacity */}
             <Text style={styles.text}>Don't have an Account?{" "}
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>  
@@ -57,16 +78,15 @@ export default function Login({ navigation }) {  // Recibe la prop `navigation`
             </Text>
 
             <Button 
-            icon="account" 
-            mode="contained" 
-            onPress={() => navigation.navigate('MainBuyer')} 
-            style={{ margin: 25, backgroundColor: '#4f4f4f' }}>
+              icon="account" 
+              mode="contained" 
+              onPress={handleLogin}  // Cambia el onPress para llamar a handleLogin
+              style={{ margin: 25, backgroundColor: '#4f4f4f' }}>
               Login
-              </Button>
+            </Button>
           </Card.Content>
 
           <StatusBar style="auto" />
-
         </Box>
 
         <Footer />
@@ -104,5 +124,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: 50,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
   },
 });

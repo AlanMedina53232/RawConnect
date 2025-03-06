@@ -144,7 +144,7 @@ export default function Reg() {
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         {successMessage ? <Alert status="success"><Text>{successMessage}</Text></Alert> : null}
 
-        <Button onPress={handleSubmit} isLoading={loading}>
+        <Button onPress={handleSubmit} isLoading={loading} style={styles.button}>
           <Text>Register</Text>
         </Button>
       </Box>
@@ -153,9 +153,10 @@ export default function Reg() {
 }
 
 const styles = StyleSheet.create({
-  container: { width: '200',padding: 5, justifyContent: 'center', alignItems: 'center' },
+  container: { width: '250',padding: 5, justifyContent: 'center', alignItems: 'center'},
   input: { marginBottom: 10, fontSize: 16, marginHorizontal: 10 },
   imagePicker: { marginVertical: 10, padding: 10, backgroundColor: '#ccc', alignItems: 'center' },
   image: { width: 100, height: 100, borderRadius: 50, marginTop: 10 },
   errorText: { color: "red", textAlign: "center", marginBottom: 15 },
+  button: { width: '75%', padding: 10, backgroundColor: '#4CAF50 ', alignItems: 'center', justifyContent: 'center', marginTop: 10, marginLeft: '12.5%' },
 });

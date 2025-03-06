@@ -12,6 +12,7 @@ import MainBuyer from "./Buyer/MainBuyer"
 import Login from "./screens/login"
 import Principal from "./screens/principal"
 import Register from "./screens/register"
+import MainProducer from "./Producer/MainProducer"
 
 const Stack = createStackNavigator()
 
@@ -32,6 +33,13 @@ function App() {
         />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen
+          name="MainProducer"
+          component={MainProducer}
+          options={{
+            headerShown: false,
+          }}
+        />
         <Stack.Screen
           name="MainBuyer"
           component={MainBuyer}
