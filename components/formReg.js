@@ -86,7 +86,8 @@ export default function Reg({ isProducer = false }) {
       const user = userCredential.user
 
       // Create user document in Firestore
-      const userDocRef = doc(db, "users", user.email)
+      const userDocRef = doc(db, "users", user.email);
+      const profileImage = formData.profileImage || null; // Get the profile image URL
       await setDoc(userDocRef, {
         fullName: formData.fullName,
         email: formData.email,
@@ -95,7 +96,7 @@ export default function Reg({ isProducer = false }) {
         companyName: isProducer ? formData.companyName : "",
         industryType: isProducer ? formData.industryType : "",
         companyDescription: isProducer ? formData.companyDescription : "",
-        profileImage: imageUrl,
+        profileImage: profileImage, // Save the profile image URL
         createdAt: new Date(),
       })
 
