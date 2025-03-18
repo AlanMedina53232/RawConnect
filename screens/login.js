@@ -1,10 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import { Box, Input, NativeBaseProvider } from 'native-base';
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, Card, Text } from 'react-native-paper';
 import Footer from '../components/Footer';
-import { auth, db, doc, getDoc, signInWithEmailAndPassword } from '../config/fb.js'; // Importar Firestore
+import { auth, db, doc, getDoc, signInWithEmailAndPassword, onAuthStateChanged } from '../config/fb.js'; // Importar Firestore
 
 export default function Login({ navigation }) {
   const [user, setUser] = useState("");
@@ -14,10 +14,38 @@ export default function Login({ navigation }) {
     pass: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true); // Para manejar el estado de carga mientras se verifica la autenticación
+
+  useEffect(() => {
+    // Verificar si el usuario ya está autenticado
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        // Si hay un usuario logueado, consultar su rol
+        const docRef = doc(db, "Roles", currentUser.email);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const role = docSnap.data().role;
+          if (role === 1) {
+            navigation.navigate('MainBuyer');
+          } else if (role === 2) {
+            navigation.navigate('MainProducer');
+          } else {
+            setError("Invalid role assigned to this user.");
+          }
+        } else {
+          setError("User not found in roles collection.");
+        }
+      }
+      setLoading(false); // Detener la carga después de verificar el estado de autenticación
+    });
+
+    // Limpiar el listener cuando el componente se desmonte
+    return () => unsubscribe();
+  }, [navigation]);
 
   const handleLogin = async () => {
     try {
-
       const userCredential = await signInWithEmailAndPassword(auth, user, pass);
       const currentUser = userCredential.user;
 
@@ -26,7 +54,6 @@ export default function Login({ navigation }) {
 
       if (docSnap.exists()) {
         const role = docSnap.data().role;
-
 
         if (role === 1) {
           navigation.navigate('MainBuyer');
@@ -43,6 +70,81 @@ export default function Login({ navigation }) {
     }
   };
 
+  const handlePredefinedLoginpRroducer = async () => {
+    try {
+      // Intentar iniciar sesión con las credenciales predefinidas
+      const userCredential = await signInWithEmailAndPassword(auth, predefinedUserProd.email, predefinedUserProd.password);
+      const currentUser = userCredential.user;
+  
+      const docRef = doc(db, "Roles", currentUser.email);
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        const role = docSnap.data().role;
+  
+        // Redirigir según el rol del usuario
+        if (role === 1) {
+          navigation.navigate('MainBuyer');
+        } else if (role === 2) {
+          navigation.navigate('MainProducer');
+        } else {
+          setError("Invalid role assigned to this user.");
+        }
+      } else {
+        setError("User not found in roles collection.");
+      }
+    } catch (error) {
+      setError("Login failed. Please check your credentials.");
+    }
+  };
+
+  const predefinedUserProd = {
+    email: "productor@gmail.com", // Correo electrónico predefinido
+    password: "Prod123456&"           // Contraseña predefinida
+  };
+
+  const handlePredefinedLoginpBuyer = async () => {
+    try {
+      // Intentar iniciar sesión con las credenciales predefinidas
+      const userCredential = await signInWithEmailAndPassword(auth, predefinedUserBuyer.email, predefinedUserBuyer.password);
+      const currentUser = userCredential.user;
+  
+      const docRef = doc(db, "Roles", currentUser.email);
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        const role = docSnap.data().role;
+  
+        // Redirigir según el rol del usuario
+        if (role === 1) {
+          navigation.navigate('MainBuyer');
+        } else if (role === 2) {
+          navigation.navigate('MainProducer');
+        } else {
+          setError("Invalid role assigned to this user.");
+        }
+      } else {
+        setError("User not found in roles collection.");
+      }
+    } catch (error) {
+      setError("Login failed. Please check your credentials.");
+    }
+  };
+
+  const predefinedUserBuyer = {
+    email: "jorgito@gmail.com", // Correo electrónico predefinido
+    password: "Jorgito123456&"           // Contraseña predefinida
+  };
+
+  
+  
+
+  // Si estamos cargando (comprobando si el usuario está autenticado), mostramos una pantalla de carga
+  if (loading) {
+    return <Text>Loading...</Text>;
+  }
+
+  
   return (
     <NativeBaseProvider>
       <View style={styles.container}>
@@ -84,6 +186,23 @@ export default function Login({ navigation }) {
               style={{ margin: 25, backgroundColor: '#4f4f4f' }}>
               Login
             </Button>
+
+            <Button
+  icon="account"
+  mode="contained"
+  onPress={handlePredefinedLoginpRroducer}  // Llamar a la función handlePredefinedLogin
+  style={{ margin: 25, backgroundColor: '#4f4f4f' }}>
+  Login Producer
+</Button>
+
+<Button
+  icon="account"
+  mode="contained"
+  onPress={handlePredefinedLoginpBuyer}  // Llamar a la función handlePredefinedLogin
+  style={{ margin: 25, backgroundColor: '#4f4f4f' }}>
+  Login Buyer
+</Button>
+
           </Card.Content>
 
           <StatusBar style="auto" />

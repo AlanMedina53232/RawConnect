@@ -1,5 +1,3 @@
-"use client"
-
 import { useNavigation } from "@react-navigation/native"
 import { useEffect, useState } from "react"
 import { StyleSheet, View } from "react-native"
@@ -63,7 +61,7 @@ const MainProducer = () => {
               </View>
               <Button
                 mode="contained"
-                onPress={() => navigation.navigate("ProfileScreen")}
+                onPress={() => navigation.navigate("ProfileScreen", {userData})}
                 style={styles.profileButton}
               >
                 Profile

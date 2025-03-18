@@ -8,10 +8,8 @@ const Principal = ({ navigation }) => {
     <NativeBaseProvider>
       <View style={styles.container}>
         <Box style={styles.box}>
-          <Text style={styles.title}>Welcome to MyApp</Text>
+          <Text style={styles.title}>Welcome to RawConnect</Text>
           <Text style={styles.subtitle}>Your journey starts here</Text>
-          
-          
         </Box>
         <Footer/>
       </View>

@@ -1,8 +1,10 @@
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { LinearGradient } from "expo-linear-gradient";
-import { Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Button, Text } from "react-native-paper";
+import { auth, db, doc, getDoc, setDoc, updateDoc, signOut } from "../config/fb.js";
+
 import Agricultural from "./Components/Agricultural";
 import Chemicals from "./Components/Chemicals";
 import Forestry from "./Components/Forestry";
@@ -103,6 +105,23 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
+const handleSignOut = (navigation) => {
+  signOut(auth)
+    .then(() => {
+      Alert.alert("Success", "You have been signed out.");
+      navigation.reset({
+        index: 0, // Establece el índice en 0 para que el Login sea la única pantalla en la pila
+        routes: [{ name: "Login" }], // Define el nombre de la pantalla a la que debe navegar después de cerrar sesión
+      });
+    })
+    .catch((error) => {
+      console.error("Error signing out: ", error);
+      Alert.alert("Error", "An error occurred while signing out.");
+    });
+};
+
+
+
 // 📋 Menú lateral (DrawerContent)
 const DrawerContent = (props) => (
   <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.drawerContent}>
@@ -129,6 +148,15 @@ const DrawerContent = (props) => (
       <Button icon="cog" mode="contained" onPress={() => alert("Configuración")} style={styles.drawerButton}>
         Configuración
       </Button>
+      <Button
+  icon="logout"
+  mode="contained"
+  onPress={() => handleSignOut(props.navigation)} // Pasar `props.navigation` aquí
+  style={styles.signOutButton}
+>
+  Sign Out
+</Button>
+
     </View>
   </GradientBackground>
 );
@@ -161,6 +189,11 @@ const MainBuyer = () => {
 };
 
 const styles = StyleSheet.create({
+
+  signOutButton: {
+    marginTop: 20,
+    backgroundColor: "#D32F2F",
+  },
   container: {
     flex: 1,
     backgroundColor: "#ecf0f1",
