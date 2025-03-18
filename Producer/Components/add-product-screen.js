@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native"
 import { addDoc, collection } from "firebase/firestore"
 import { useState } from "react"
 import { Alert, ScrollView, StyleSheet, View } from "react-native"
+import ImageUploader from "../../components/ImageUploader"
 import { Button, HelperText, IconButton, Menu, Text, TextInput, useTheme } from "react-native-paper"
 import { db } from "../../firebase/config"
 
@@ -16,6 +17,7 @@ const AddProductScreen = () => {
     const [menuVisible, setMenuVisible] = useState(false)
 
     const [product, setProduct] = useState({
+        imageUrl: "", // Added to store the uploaded image URL
         name: "",
         category: "",
         description: "",
@@ -51,6 +53,7 @@ const AddProductScreen = () => {
                 price: Number.parseFloat(product.price),
                 minimumOrder: Number.parseInt(product.minimumOrder, 10) || 1,
                 createdAt: new Date(),
+                imageUrl: product.imageUrl, // Include imageUrl in product data
             }
 
             // Add document to 
@@ -195,6 +198,10 @@ const AddProductScreen = () => {
                     numberOfLines={3}
                 />
 
+                <ImageUploader
+                    uploadPreset="rawcn_products" // Replace with your actual upload preset
+                    onUploadComplete={(url) => updateProduct("imageUrl", url)} // Update imageUrl state
+                />
                 <Button
                     mode="contained"
                     onPress={handleSubmit}
@@ -251,4 +258,3 @@ const styles = StyleSheet.create({
 })
 
 export default AddProductScreen
-
