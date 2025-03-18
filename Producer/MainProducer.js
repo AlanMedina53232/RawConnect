@@ -50,18 +50,26 @@ const MainProducer = () => {
         {!loading && (
           <Card style={styles.userCard}>
             <Card.Content style={styles.userCardContent}>
-              <Avatar.Text
-                size={50}
-                label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
-                backgroundColor="#0D47A1"
-              />
+              {/* Verifica si hay una URL de imagen de perfil */}
+              {userData?.profileImage ? (
+                <Avatar.Image
+                  size={50}
+                  source={{ uri: userData.profileImage }}
+                />
+              ) : (
+                <Avatar.Text
+                  size={50}
+                  label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
+                  backgroundColor="#0D47A1"
+                />
+              )}
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{userData?.fullName || "Producer"}</Text>
                 <Text style={styles.userEmail}>{userData?.email}</Text>
               </View>
               <Button
                 mode="contained"
-                onPress={() => navigation.navigate("ProfileScreen", {userData})}
+                onPress={() => navigation.navigate("ProfileScreen", { userData })}
                 style={styles.profileButton}
               >
                 Profile

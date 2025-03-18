@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Avatar, Button, Divider, Text, TextInput, useTheme } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { MaskedTextInput } from "react-native-mask-text"
 import { auth, db, doc, getDoc, setDoc, updateDoc, signOut } from "../../config/fb.js";
 
 const ProfileScreen = ({ route, navigation }) => {
@@ -195,11 +196,19 @@ const ProfileScreen = ({ route, navigation }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Avatar.Text
-          size={120}
-          label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
-          backgroundColor="#0D47A1"
-        />
+        {/* Aquí cambiamos a Avatar.Image si profileImage está disponible */}
+        {userData?.profileImage ? (
+          <Avatar.Image
+            size={120}
+            source={{ uri: userData.profileImage }}
+          />
+        ) : (
+          <Avatar.Text
+            size={120}
+            label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
+            backgroundColor="#0D47A1"
+          />
+        )}
         <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
           <Icon name={isEditing ? "check" : "pencil"} size={24} color={theme.colors.primary} />
         </TouchableOpacity>
