@@ -1,13 +1,13 @@
-import React, { useState } from "react";
-import { View, Image, TouchableOpacity, ActivityIndicator, Text } from "react-native";
-import * as ImagePicker from "expo-image-picker";
+import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Image, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 
-const ImageUploader = ({ onUploadComplete }) => {
+const ImageUploader = ({ uploadPreset, onUploadComplete }) => {
   const [image, setImage] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 4],
@@ -16,42 +16,65 @@ const ImageUploader = ({ onUploadComplete }) => {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
-      uploadImageToCloudinary(result.assets[0].uri);
+      await uploadImageToCloudinary(result.assets[0].uri);
     }
   };
 
   const uploadImageToCloudinary = async (imageUri) => {
-    setUploading(true);
-    let formData = new FormData();
-    formData.append("file", { uri: imageUri, name: "profile.jpg", type: "image/jpeg" });
-    formData.append("upload_preset", "your_upload_preset");
-    formData.append("cloud_name", "your_cloud_name");
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('file', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'profile.jpg',
+    });
+    formData.append('upload_preset', uploadPreset);
+    formData.append('cloud_name', 'df5qzxunp');
 
     try {
-      let response = await fetch("https://api.cloudinary.com/v1_1/your_cloud_name/image/upload", {
-        method: "POST",
+      const response = await fetch('https://api.cloudinary.com/v1_1/df5qzxunp/image/upload', {
+        method: 'POST',
         body: formData,
       });
-      let data = await response.json();
+      const data = await response.json();
+      setLoading(false);
+
       if (data.secure_url) {
         onUploadComplete(data.secure_url);
+      } else {
+        console.error('Failed to upload image.');
       }
     } catch (error) {
-      console.error("Error uploading image:", error);
-    } finally {
-      setUploading(false);
+      console.error('Error uploading image:', error);
+      setLoading(false);
     }
   };
 
   return (
-    <View style={{ alignItems: "center", marginVertical: 10 }}>
-      <TouchableOpacity onPress={pickImage} style={{ padding: 10, backgroundColor: "#ccc" }}>
-        <Text>{uploading ? "Uploading..." : "Pick a Profile Picture"}</Text>
+    <View>
+      <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+        <Text>{loading ? 'Uploading...' : 'Pick an Image'}</Text>
       </TouchableOpacity>
-      {image && !uploading && <Image source={{ uri: image }} style={{ width: 100, height: 100, borderRadius: 50, marginTop: 10 }} />}
-      {uploading && <ActivityIndicator size="small" color="#0000ff" />}
+      {image && <Image source={{ uri: image }} style={styles.image} />}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  imagePicker: {
+    marginVertical: 10,
+    padding: 10,
+    backgroundColor: '#ccc',
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginTop: 10,
+    alignSelf: 'center',
+  },
+});
 
 export default ImageUploader;

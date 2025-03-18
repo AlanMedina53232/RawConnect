@@ -1,7 +1,5 @@
-"use client"
-
 import { useNavigation } from "@react-navigation/native"
-import * as ImagePicker from "expo-image-picker"
+import ImageUploader from './ImageUploader'; // Import ImageUploader component
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
 import { Alert, Box, Button, FormControl, Input, Select, Text, TextArea } from "native-base"
@@ -30,43 +28,6 @@ export default function Reg({ isProducer = false }) {
 
   const updateFormData = (field, value) => {
     setFormData({ ...formData, [field]: value })
-  }
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 4],
-      quality: 1,
-    })
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri)
-    }
-  }
-
-  const uploadImageToCloudinary = async (imageUri) => {
-    const formData = new FormData()
-    formData.append("file", {
-      uri: imageUri,
-      type: "image/jpeg",
-      name: "profile.jpg",
-    })
-    formData.append("upload_preset", "testist")
-    formData.append("cloud_name", "df5qzxunp")
-
-    try {
-      const response = await fetch("https://api.cloudinary.com/v1_1/df5qzxunp/image/upload", {
-        method: "POST",
-        body: formData,
-      })
-      const data = await response.json()
-      console.log("Cloudinary Response:", data)
-      return data.secure_url || null
-    } catch (error) {
-      console.error("Error uploading image:", error)
-      return null
-    }
   }
 
   const validateForm = () => {
@@ -243,10 +204,10 @@ export default function Reg({ isProducer = false }) {
             </>
           )}
 
-          <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
-            <Text>Pick a Profile Picture</Text>
-          </TouchableOpacity>
-          {image && <Image source={{ uri: image }} style={styles.image} />}
+          <ImageUploader
+            uploadPreset="rawcn_users" // Cloudinary upload preset
+            onUploadComplete={(url) => updateFormData("profileImage", url)} // Update form data with image URL
+          />
 
           <FormControl isRequired>
             <FormControl.Label>Password</FormControl.Label>
@@ -327,4 +288,3 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
 })
-
