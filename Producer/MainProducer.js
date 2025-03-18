@@ -1,54 +1,168 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
-import { NativeBaseProvider, Box } from 'native-base';
-import Footer from '../components/Footer';
+"use client"
 
-const Principal = ({ navigation }) => {
+import { useNavigation } from "@react-navigation/native"
+import { useEffect, useState } from "react"
+import { StyleSheet, View } from "react-native"
+import { Avatar, Button, Card, Text, useTheme } from "react-native-paper"
+import { auth, db, doc, getDoc } from "../config/fb.js"
+
+const MainProducer = () => {
+  const theme = useTheme()
+  const navigation = useNavigation()
+  const [userData, setUserData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const currentUser = auth.currentUser
+        if (currentUser) {
+          // Get user profile data from Firestore
+          const userDocRef = doc(db, "users", currentUser.email)
+          const userDoc = await getDoc(userDocRef)
+
+          if (userDoc.exists()) {
+            setUserData({
+              email: currentUser.email,
+              ...userDoc.data(),
+            })
+          } else {
+            // If no user document exists, just use the auth data
+            setUserData({
+              email: currentUser.email,
+              fullName: currentUser.displayName || "Producer",
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
   return (
-    <NativeBaseProvider>
-      <View style={styles.container}>
-        <Box style={styles.box}>
-          <Text style={styles.title}>Welcome to Producer View</Text>
-          
-          
-        </Box>
-        <Footer/>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Producer Dashboard</Text>
+
+        {!loading && (
+          <Card style={styles.userCard}>
+            <Card.Content style={styles.userCardContent}>
+              <Avatar.Text
+                size={50}
+                label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
+                backgroundColor="#0D47A1"
+              />
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{userData?.fullName || "Producer"}</Text>
+                <Text style={styles.userEmail}>{userData?.email}</Text>
+              </View>
+              <Button
+                mode="contained"
+                onPress={() => navigation.navigate("ProfileScreen")}
+                style={styles.profileButton}
+              >
+                Profile
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
       </View>
-    </NativeBaseProvider>
-  );
-};
+
+      <View style={styles.buttonContainer}>
+        <Button
+          mode="contained"
+          icon="package-variant"
+          contentStyle={styles.buttonContent}
+          style={styles.button}
+          labelStyle={styles.buttonLabel}
+          onPress={() => navigation.navigate("ProductManagement")}
+        >
+          Manage Products
+        </Button>
+
+        <Button
+          mode="contained"
+          icon="clipboard-list"
+          contentStyle={styles.buttonContent}
+          style={styles.button}
+          labelStyle={styles.buttonLabel}
+          onPress={() => navigation.navigate("MyOrders")}
+        >
+          Manage Orders
+        </Button>
+      </View>
+    </View>
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  box: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 300,
-    height: 350,
-    borderRadius: 15,
+    backgroundColor: "#263238",
     padding: 20,
-    backgroundColor: '#f0f0f0',
+  },
+  header: {
+    marginTop: 40,
+    marginBottom: 30,
+    alignItems: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 20,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 30,
+  userCard: {
+    width: "100%",
+    marginBottom: 20,
+    backgroundColor: "#37474F",
+    borderRadius: 12,
+  },
+  userCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  userEmail: {
+    fontSize: 14,
+    color: "#B0BEC5",
+  },
+  profileButton: {
+    backgroundColor: "#0D47A1",
+  },
+  buttonContainer: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 30,
   },
   button: {
-    width: '100%',
-    marginBottom: 10,
+    backgroundColor: "#0D47A1",
+    borderRadius: 12,
+    elevation: 4,
   },
-});
+  buttonContent: {
+    height: 100,
+    justifyContent: "center",
+  },
+  buttonLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+})
 
-export default Principal;
+export default MainProducer
+

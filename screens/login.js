@@ -1,10 +1,10 @@
-import React, { useState } from "react";
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
-import { Text, Card, Button } from 'react-native-paper';
-import { Input, NativeBaseProvider, Box } from 'native-base';
-import { auth, signInWithEmailAndPassword, db, doc, getDoc } from '../config/fb.js';  // Importar Firestore
+import { Box, Input, NativeBaseProvider } from 'native-base';
+import React, { useState } from "react";
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button, Card, Text } from 'react-native-paper';
 import Footer from '../components/Footer';
+import { auth, db, doc, getDoc, signInWithEmailAndPassword } from '../config/fb.js'; // Importar Firestore
 
 export default function Login({ navigation }) {
   const [user, setUser] = useState("");
@@ -18,20 +18,20 @@ export default function Login({ navigation }) {
   const handleLogin = async () => {
     try {
 
-      const userCredential = await signInWithEmailAndPassword(auth, user, pass);  
+      const userCredential = await signInWithEmailAndPassword(auth, user, pass);
       const currentUser = userCredential.user;
-      
-      const docRef = doc(db, "Roles", currentUser.email); 
+
+      const docRef = doc(db, "Roles", currentUser.email);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        const role = docSnap.data().role; 
+        const role = docSnap.data().role;
 
-        
-        if (role === 1) { 
-          navigation.navigate('MainBuyer');  
-        } else if (role === 2) { 
-          navigation.navigate('MainProducer');  
+
+        if (role === 1) {
+          navigation.navigate('MainBuyer');
+        } else if (role === 2) {
+          navigation.navigate('MainProducer');
         } else {
           setError("Invalid role assigned to this user.");
         }
@@ -44,7 +44,7 @@ export default function Login({ navigation }) {
   };
 
   return (
-    <NativeBaseProvider> 
+    <NativeBaseProvider>
       <View style={styles.container}>
         <Box>
           <Card.Content style={{ boxShadow: '50%', borderRadius: 10, backgroundColor: '#f0f0f0', alignItems: 'center', width: 350, height: 600, marginBottom: 80 }}>
@@ -67,19 +67,19 @@ export default function Login({ navigation }) {
               style={styles.input}
               secureTextEntry={true}
             />
-            
+
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             {/* Separando el texto y el TouchableOpacity */}
             <Text style={styles.text}>Don't have an Account?{" "}
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>  
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                 <Text style={styles.link}>Register</Text>
               </TouchableOpacity>
             </Text>
 
-            <Button 
-              icon="account" 
-              mode="contained" 
+            <Button
+              icon="account"
+              mode="contained"
               onPress={handleLogin}  // Cambia el onPress para llamar a handleLogin
               style={{ margin: 25, backgroundColor: '#4f4f4f' }}>
               Login

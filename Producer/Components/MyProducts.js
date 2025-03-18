@@ -1,58 +1,93 @@
-"use producer"
+"use client"
+import { useNavigation } from "@react-navigation/native"
+import { StyleSheet, View } from "react-native"
+import { Card, IconButton, Text, useTheme } from "react-native-paper"
 
-import { View, StyleSheet } from "react-native";
-import { Button, Text, useTheme } from "react-native-paper";
-
-const MyOrdersScreen = () => {
-    const theme = useTheme();
+const ProductManagementScreen = () => {
+    const theme = useTheme()
+    const navigation = useNavigation()
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>My Orders</Text>
-            <View style={styles.orderCard}>
-                <Text style={styles.producer}>Producer</Text>
-                <Button mode="contained" style={styles.button}>Logo</Button>
-                <Button mode="contained" style={styles.button}>User Icon</Button>
-                <Button mode="contained" style={styles.button}>View Details of Order</Button>
-                <Button mode="contained" style={[styles.button, styles.acceptButton]}>Accept Order</Button>
-                <Button mode="contained" style={[styles.button, styles.rejectButton]}>Reject Order</Button>
+            <View style={styles.header}>
+                <IconButton icon="arrow-left" iconColor="#FFFFFF" size={24} onPress={() => navigation.goBack()} />
+                <Text style={styles.title}>Product Management</Text>
+            </View>
+
+            <View style={styles.actionCards}>
+                <Card style={styles.card} onPress={() => navigation.navigate("AddProduct")}>
+                    <Card.Content style={styles.cardContent}>
+                        <IconButton icon="plus-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
+                        <Text style={styles.cardTitle}>Add Product</Text>
+                        <Text style={styles.cardDescription}>Create a new product listing with details and specifications</Text>
+                    </Card.Content>
+                </Card>
+
+                <Card style={styles.card} onPress={() => navigation.navigate("EditProduct")}>
+                    <Card.Content style={styles.cardContent}>
+                        <IconButton icon="pencil-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
+                        <Text style={styles.cardTitle}>Edit Product</Text>
+                        <Text style={styles.cardDescription}>Modify existing product information and specifications</Text>
+                    </Card.Content>
+                </Card>
+
+                <Card style={styles.card} onPress={() => navigation.navigate("DeleteProduct")}>
+                    <Card.Content style={styles.cardContent}>
+                        <IconButton icon="delete-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
+                        <Text style={styles.cardTitle}>Delete Product</Text>
+                        <Text style={styles.cardDescription}>Remove products that are no longer available</Text>
+                    </Card.Content>
+                </Card>
             </View>
         </View>
-    );
-};
+    )
+}
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: "#263238",
         padding: 20,
-        backgroundColor: "#f5f5f5",
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 30,
     },
     title: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: "bold",
-        marginBottom: 10,
+        color: "#FFFFFF",
+        marginLeft: 10,
     },
-    orderCard: {
-        backgroundColor: "#2c3e50",
+    actionCards: {
+        flex: 1,
+        gap: 20,
+    },
+    card: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: 12,
+        elevation: 4,
+    },
+    cardContent: {
         padding: 10,
-        borderRadius: 8,
+        alignItems: "center",
     },
-    producer: {
-        color: "#fff",
-        fontSize: 16,
+    cardIcon: {
+        margin: 10,
+    },
+    cardTitle: {
+        fontSize: 18,
         fontWeight: "bold",
-        paddingVertical: 10,
+        marginBottom: 8,
+        color: "#263238",
     },
-    button: {
-        marginVertical: 5,
-        backgroundColor: "#3b5998",
+    cardDescription: {
+        fontSize: 14,
+        color: "#546E7A",
+        textAlign: "center",
     },
-    acceptButton: {
-        backgroundColor: "#3498db",
-    },
-    rejectButton: {
-        backgroundColor: "#2980b9",
-    },
-});
+})
 
-export default MyOrdersScreen;
+export default ProductManagementScreen
+
