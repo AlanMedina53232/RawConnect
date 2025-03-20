@@ -94,6 +94,7 @@ export default function DetailsBuyer({ navigation }) {
     const navigateToProductDetails = (product) => {
         
         navigation.navigate("ProductDetails", { product })
+        console.log({product})
     }
 
     return (
@@ -166,7 +167,7 @@ export default function DetailsBuyer({ navigation }) {
                                     <Text style={styles.featuredProductName} numberOfLines={1}>
                                         {product.name}
                                     </Text>
-                                    <Text style={styles.featuredProductPrice}>{product.price}</Text>
+                                    <Text style={styles.featuredProductPrice}>${product.price}</Text>
                                     {renderStars(product.rating)}
                                 </View>
                             </TouchableOpacity>

@@ -2,7 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons"
 import { useState } from "react"
-import { Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native"
 
 
 const { width } = Dimensions.get("window")
@@ -109,8 +109,16 @@ export default function ProductDetails({ route, navigation }) {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.imageContainer}>
                     <View style={styles.productImagePlaceholder}>
-                        <Text style={styles.imagePlaceholderText}>Imagen del Producto</Text>
-                        <Text style={styles.imagePlaceholderText}>400 x 300</Text>
+                        {product.imageUrl ? (
+                                                            <Image
+                                                              source={{ uri: product.imageUrl }}
+                                                              style={styles.productImage}
+                                                            />
+                                                          ) : (
+                                                            <View style={styles.productImagePlaceholder}>
+                                                              <Text style={styles.imagePlaceholderText}>Image</Text>
+                                                            </View>
+                                                          )}
                     </View>
 
                     
@@ -123,10 +131,10 @@ export default function ProductDetails({ route, navigation }) {
 
                 
                 <View style={styles.productInfoContainer}>
-                    <Text style={styles.productCategory}>{productDetails.category}</Text>
-                    <Text style={styles.productName}>{productDetails.name}</Text>
+                    <Text style={styles.productCategory}>{product.category}</Text>
+                    <Text style={styles.productName}>{product.name}</Text>
                     <View style={styles.priceRatingRow}>
-                        <Text style={styles.productPrice}>{productDetails.price}</Text>
+                        <Text style={styles.productPrice}>${product.price}</Text>
                         {renderStars(productDetails.rating)}
                     </View>
 
@@ -147,7 +155,7 @@ export default function ProductDetails({ route, navigation }) {
                   
                     <View style={styles.sectionContainer}>
                         <Text style={styles.sectionTitle}>Descripción</Text>
-                        <Text style={styles.descriptionText}>{productDetails.description}</Text>
+                        <Text style={styles.descriptionText}>{product.description}</Text>
                     </View>
 
                    
@@ -237,16 +245,29 @@ const styles = StyleSheet.create({
         height: 300,
         position: "relative",
     },
-    productImagePlaceholder: {
+    productImage: {
+        height: 400,
         width: "100%",
-        height: "100%",
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+      },
+    featuredImagePlaceholder: {
+        height: 180,
         backgroundColor: COLORS.secondary,
         justifyContent: "center",
         alignItems: "center",
     },
+    productImagePlaceholder: {
+        height: 225,
+        backgroundColor: COLORS.secondary,
+        justifyContent: "center",
+        alignItems: "center",
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+    },
     imagePlaceholderText: {
         color: COLORS.white,
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "500",
     },
     stockIndicator: {
