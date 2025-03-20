@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native"
-import ImageUploader from './ImageUploader'; // Import ImageUploader component
+import ImageUploader from './ImageUploader';
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
 import { Alert, Box, Button, FormControl, Input, Select, Text, TextArea } from "native-base"
@@ -80,14 +80,12 @@ export default function Reg({ isProducer = false }) {
     }
 
     try {
-      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
 
       const user = userCredential.user
 
-      // Create user document in Firestore
       const userDocRef = doc(db, "users", user.email);
-      const profileImage = formData.profileImage || null; // Get the profile image URL
+      const profileImage = formData.profileImage || null;
       await setDoc(userDocRef, {
         fullName: formData.fullName,
         email: formData.email,
@@ -96,19 +94,18 @@ export default function Reg({ isProducer = false }) {
         companyName: isProducer ? formData.companyName : "",
         industryType: isProducer ? formData.industryType : "",
         companyDescription: isProducer ? formData.companyDescription : "",
-        profileImage: profileImage, // Save the profile image URL
+        profileImage: profileImage,
         createdAt: new Date(),
       })
 
-      // Set user role in Roles collection
+      
       const roleDocRef = doc(db, "Roles", user.email)
       await setDoc(roleDocRef, {
-        role: isProducer ? 2 : 1, // 1 for buyer, 2 for producer
+        role: isProducer ? 2 : 1,
       })
 
       setSuccessMessage("User successfully registered")
 
-      // Navigate to login after a short delay
       setTimeout(() => {
         navigation.navigate("Login")
       }, 2000)
@@ -206,8 +203,8 @@ export default function Reg({ isProducer = false }) {
           )}
 
           <ImageUploader
-            uploadPreset="rawcn_users" // Cloudinary upload preset
-            onUploadComplete={(url) => updateFormData("profileImage", url)} // Update form data with image URL
+            uploadPreset="rawcn_users" 
+            onUploadComplete={(url) => updateFormData("profileImage", url)}
           />
 
           <FormControl isRequired>
