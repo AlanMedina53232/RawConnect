@@ -18,19 +18,19 @@ const ProfileScreen = () => {
 
     const handleEdit = () => {
         if (isEditing) {
-            // Aquí iría la lógica para guardar los cambios
+
             handleSave()
         }
         setIsEditing(!isEditing)
     }
 
     const handleSave = () => {
-        // Aquí iría la lógica para guardar los cambios en el servidor
+
         setIsEditing(false)
     }
 
     const handleResetPassword = () => {
-        // Aquí iría la lógica para restablecer la contraseña
+        
         console.log("Restablecer contraseña")
     }
 

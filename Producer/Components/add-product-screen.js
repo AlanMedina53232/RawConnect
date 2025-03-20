@@ -17,7 +17,7 @@ const AddProductScreen = () => {
     const [menuVisible, setMenuVisible] = useState(false)
 
     const [product, setProduct] = useState({
-        imageUrl: "", // Added to store the uploaded image URL
+        imageUrl: "", 
         name: "",
         category: "",
         description: "",
@@ -25,8 +25,6 @@ const AddProductScreen = () => {
         price: "",
         minimumOrder: "",
         deliveryOptions: "",
-        paymentType: "",
-        salesConditions: "",
     })
 
     const updateProduct = (field, value) => {
@@ -47,17 +45,16 @@ const AddProductScreen = () => {
         try {
             setLoading(true)
 
-            // Convert price and minimumOrder to numbers
+
             const productData = {
                 ...product,
                 price: Number.parseFloat(product.price),
                 minimumOrder: Number.parseInt(product.minimumOrder, 10) || 1,
                 createdAt: new Date(),
-                imageUrl: product.imageUrl, // Include imageUrl in product data
+                imageUrl: product.imageUrl, 
             }
 
-            // Add document to 
-            // store
+
             await addDoc(collection(db, "products"), productData)
 
             Alert.alert("Success", "Product added successfully", [{ text: "OK", onPress: () => navigation.goBack() }])
@@ -176,31 +173,9 @@ const AddProductScreen = () => {
                     numberOfLines={2}
                 />
 
-                <TextInput
-                    label="Payment Type"
-                    value={product.paymentType}
-                    onChangeText={(text) => updateProduct("paymentType", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                />
-
-                <TextInput
-                    label="Sales Conditions"
-                    value={product.salesConditions}
-                    onChangeText={(text) => updateProduct("salesConditions", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                    multiline
-                    numberOfLines={3}
-                />
-
                 <ImageUploader
-                    uploadPreset="rawcn_products" // Replace with your actual upload preset
-                    onUploadComplete={(url) => updateProduct("imageUrl", url)} // Update imageUrl state
+                    uploadPreset="rawcn_products" 
+                    onUploadComplete={(url) => updateProduct("imageUrl", url)} 
                 />
                 <Button
                     mode="contained"

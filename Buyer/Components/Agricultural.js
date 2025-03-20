@@ -4,14 +4,14 @@ import { Ionicons } from "@expo/vector-icons"
 import { useState } from "react"
 import { Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
-// Obtén las dimensiones de la pantalla para hacer la interfaz responsive
+
 const { width } = Dimensions.get("window")
 
-// Paleta de colores
+
 const COLORS = {
-    primary: "#00BCD4", // Turquesa principal
-    secondary: "#80DEEA", // Turquesa claro
-    accent: "#0097A7", // Turquesa oscuro
+    primary: "#00BCD4", 
+    secondary: "#80DEEA", 
+    accent: "#0097A7", 
     white: "#FFFFFF",
     lightGray: "#F5F5F5",
     gray: "#9E9E9E",
@@ -20,8 +20,8 @@ const COLORS = {
 }
 
 export default function DetailsBuyer({ navigation }) {
-    // Estado para almacenar los productos
-    // AQUÍ IMPLEMENTAR LÓGICA PARA OBTENER PRODUCTOS DE LA BASE DE DATOS
+    
+    
     const [products, setProducts] = useState([
         {
             id: "1",
@@ -65,12 +65,12 @@ export default function DetailsBuyer({ navigation }) {
         },
     ])
 
-    // Categorías destacadas
+    
     const categories = ["Agricultural", "Minerals", "Forestry", "Chemicals"]
 
     const [selectedCategory, setSelectedCategory] = useState("Todos")
 
-    // Función para renderizar estrellas según la calificación
+    
     const renderStars = (rating) => {
         const stars = []
         const fullStars = Math.floor(rating)
@@ -94,9 +94,9 @@ export default function DetailsBuyer({ navigation }) {
         )
     }
 
-    // Función para navegar a la pantalla de detalles del producto
+    
     const navigateToProductDetails = (product) => {
-        // AQUÍ IMPLEMENTAR LÓGICA PARA OBTENER DETALLES COMPLETOS DEL PRODUCTO
+        
         navigation.navigate("ProductDetails", { product })
     }
 
@@ -104,7 +104,7 @@ export default function DetailsBuyer({ navigation }) {
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor={COLORS.white} barStyle="dark-content" />
 
-            {/* Header */}
+            
             <View style={styles.header}>
                 <View>
                     <Text style={styles.headerTitle}>Marketplace</Text>
@@ -115,7 +115,7 @@ export default function DetailsBuyer({ navigation }) {
                 </TouchableOpacity>
             </View>
 
-            {/* Categorías */}
+            
             <View style={styles.categoriesContainer}>
                 <ScrollView
                     horizontal
@@ -138,9 +138,9 @@ export default function DetailsBuyer({ navigation }) {
                 </ScrollView>
             </View>
 
-            {/* Lista de Productos */}
+            
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.productsContainer}>
-                {/* Productos Destacados */}
+                
                 <View style={styles.featuredContainer}>
                     <Text style={styles.sectionTitle}>Productos Destacados</Text>
                     <ScrollView
@@ -154,7 +154,7 @@ export default function DetailsBuyer({ navigation }) {
                                 style={styles.featuredProductCard}
                                 onPress={() => navigateToProductDetails(product)}
                             >
-                                {/* AQUÍ IMPLEMENTAR IMAGEN DEL PRODUCTO */}
+                                
                                 <View style={styles.featuredImagePlaceholder}>
                                     <Text style={styles.imagePlaceholderText}>Imagen</Text>
                                     <Text style={styles.imagePlaceholderText}>350 x 200</Text>
@@ -172,7 +172,7 @@ export default function DetailsBuyer({ navigation }) {
                     </ScrollView>
                 </View>
 
-                {/* Todos los Productos */}
+                
                 <View style={styles.allProductsContainer}>
                     <Text style={styles.sectionTitle}>Todos los Productos</Text>
                     <View style={styles.productsGrid}>
@@ -182,7 +182,7 @@ export default function DetailsBuyer({ navigation }) {
                                 style={styles.productCard}
                                 onPress={() => navigateToProductDetails(product)}
                             >
-                                {/* AQUÍ IMPLEMENTAR IMAGEN DEL PRODUCTO */}
+                                
                                 <View style={styles.productImagePlaceholder}>
                                     <Text style={styles.imagePlaceholderText}>Imagen</Text>
                                     <Text style={styles.imagePlaceholderText}>150 x 150</Text>
