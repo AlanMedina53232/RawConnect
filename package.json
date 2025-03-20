@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-firebase/app": "^21.10.0",
     "@react-native-firebase/auth": "^21.10.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
@@ -18,7 +19,7 @@
     "@react-navigation/stack": "^7.1.1",
     "add": "^2.0.6",
     "dotenv": "^16.4.7",
-    "expo": "~52.0.35",
+    "expo": "52.0.38",
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "^14.0.2",
     "expo-status-bar": "~2.0.1",
