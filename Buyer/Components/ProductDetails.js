@@ -4,14 +4,14 @@ import { Ionicons } from "@expo/vector-icons"
 import { useState } from "react"
 import { Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
-// Obtén las dimensiones de la pantalla para hacer la interfaz responsive
+
 const { width } = Dimensions.get("window")
 
-// Paleta de colores
+
 const COLORS = {
-    primary: "#00BCD4", // Turquesa principal
-    secondary: "#80DEEA", // Turquesa claro
-    accent: "#0097A7", // Turquesa oscuro
+    primary: "#00BCD4", 
+    secondary: "#80DEEA", 
+    accent: "#0097A7", 
     white: "#FFFFFF",
     lightGray: "#F5F5F5",
     gray: "#9E9E9E",
@@ -20,11 +20,10 @@ const COLORS = {
 }
 
 export default function ProductDetails({ route, navigation }) {
-    // Obtener el producto de los parámetros de navegación
+
     const { product } = route.params
 
-    // Estado para almacenar los detalles completos del producto
-    // AQUÍ IMPLEMENTAR LÓGICA PARA OBTENER DETALLES COMPLETOS DEL PRODUCTO
+
     const [productDetails, setProductDetails] = useState({
         ...product,
         description:
@@ -51,10 +50,9 @@ export default function ProductDetails({ route, navigation }) {
         },
     })
 
-    // Estado para la cantidad seleccionada
+    
     const [quantity, setQuantity] = useState(1)
 
-    // Función para renderizar estrellas según la calificación
     const renderStars = (rating) => {
         const stars = []
         const fullStars = Math.floor(rating)
@@ -78,23 +76,19 @@ export default function ProductDetails({ route, navigation }) {
         )
     }
 
-    // Función para incrementar la cantidad
     const incrementQuantity = () => {
         if (quantity < productDetails.stock) {
             setQuantity(quantity + 1)
         }
     }
 
-    // Función para decrementar la cantidad
     const decrementQuantity = () => {
         if (quantity > 1) {
             setQuantity(quantity - 1)
         }
     }
 
-    // Función para agregar al carrito
     const addToCart = () => {
-        // AQUÍ IMPLEMENTAR LÓGICA PARA AGREGAR AL CARRITO
         alert(`Agregado al carrito: ${quantity} unidades de ${productDetails.name}`)
     }
 
@@ -102,7 +96,6 @@ export default function ProductDetails({ route, navigation }) {
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor={COLORS.white} barStyle="dark-content" />
 
-            {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
@@ -114,15 +107,13 @@ export default function ProductDetails({ route, navigation }) {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Imagen del Producto */}
                 <View style={styles.imageContainer}>
-                    {/* AQUÍ IMPLEMENTAR IMAGEN DEL PRODUCTO */}
                     <View style={styles.productImagePlaceholder}>
                         <Text style={styles.imagePlaceholderText}>Imagen del Producto</Text>
                         <Text style={styles.imagePlaceholderText}>400 x 300</Text>
                     </View>
 
-                    {/* Indicador de stock */}
+                    
                     <View style={styles.stockIndicator}>
                         <Text style={styles.stockText}>
                             {productDetails.stock > 0 ? `${productDetails.stock} disponibles` : "Agotado"}
@@ -130,7 +121,7 @@ export default function ProductDetails({ route, navigation }) {
                     </View>
                 </View>
 
-                {/* Información del Producto */}
+                
                 <View style={styles.productInfoContainer}>
                     <Text style={styles.productCategory}>{productDetails.category}</Text>
                     <Text style={styles.productName}>{productDetails.name}</Text>
@@ -139,7 +130,7 @@ export default function ProductDetails({ route, navigation }) {
                         {renderStars(productDetails.rating)}
                     </View>
 
-                    {/* Vendedor */}
+                    
                     <View style={styles.sellerContainer}>
                         <Text style={styles.sellerLabel}>Vendedor:</Text>
                         <View style={styles.sellerInfo}>
@@ -153,13 +144,13 @@ export default function ProductDetails({ route, navigation }) {
                         </View>
                     </View>
 
-                    {/* Descripción */}
+                  
                     <View style={styles.sectionContainer}>
                         <Text style={styles.sectionTitle}>Descripción</Text>
                         <Text style={styles.descriptionText}>{productDetails.description}</Text>
                     </View>
 
-                    {/* Características */}
+                   
                     <View style={styles.sectionContainer}>
                         <Text style={styles.sectionTitle}>Características</Text>
                         {productDetails.features.map((feature, index) => (
@@ -170,7 +161,7 @@ export default function ProductDetails({ route, navigation }) {
                         ))}
                     </View>
 
-                    {/* Especificaciones */}
+                    
                     <View style={styles.sectionContainer}>
                         <Text style={styles.sectionTitle}>Especificaciones</Text>
                         {Object.entries(productDetails.specifications).map(([key, value], index) => (
@@ -183,7 +174,7 @@ export default function ProductDetails({ route, navigation }) {
                 </View>
             </ScrollView>
 
-            {/* Footer con acciones */}
+            
             <View style={styles.footer}>
                 <View style={styles.quantitySelector}>
                     <TouchableOpacity style={styles.quantityButton} onPress={decrementQuantity} disabled={quantity <= 1}>

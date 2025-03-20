@@ -2,7 +2,7 @@ import Constants from "expo-constants";
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut} from "firebase/auth"; 
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, query, where,collection} from 'firebase/firestore';
 
 const firebaseConfig = {
     apiKey: Constants.expoConfig.extra.apiKey,
@@ -14,10 +14,10 @@ const firebaseConfig = {
     databaseURL: Constants.expoConfig.extra.databaseURL,
 };
 
-// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);  
 const db = getFirestore(app);
 
-export { auth, analytics, signInWithEmailAndPassword, db, doc, getDoc, onAuthStateChanged, signOut};  
+export { auth, analytics, signInWithEmailAndPassword, db, doc, getDoc, onAuthStateChanged, signOut, query, where, collection };  

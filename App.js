@@ -86,7 +86,6 @@ function App() {
             }}
           />
 
-          {/* Add the new producer screens */}
           <Stack.Screen
             name="ProducerHome"
             component={HomeScreen}

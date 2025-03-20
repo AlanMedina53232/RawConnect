@@ -22,12 +22,12 @@ const ProfileScreen = ({ route, navigation }) => {
   });
 
   useEffect(() => {
-    // Si los datos del usuario fueron pasados desde MainProducer, usarlos
+   
     if (route.params?.userData) {
       setUserData(route.params.userData);
       setLoading(false);
     } else {
-      // Si no se pasan los datos, obtenemos los datos de Firestore como antes
+     
       const fetchUserData = async () => {
         try {
           if (auth && auth.currentUser) {
@@ -41,7 +41,7 @@ const ProfileScreen = ({ route, navigation }) => {
                 ...userDoc.data(),
               });
             } else {
-              // Si no hay documento, usamos datos por defecto
+              
               const defaultUserData = {
                 email: currentUser.email,
                 fullName: currentUser.displayName || "",
@@ -54,7 +54,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
               setUserData(defaultUserData);
 
-              // Crear un documento de usuario si no existe
+              
               try {
                 await setDoc(userDocRef, {
                   ...defaultUserData,
@@ -65,7 +65,7 @@ const ProfileScreen = ({ route, navigation }) => {
               }
             }
           } else {
-            // Si no está autenticado, redirige al login
+            
             Alert.alert("Not Logged In", "You need to be logged in to view your profile.", [
               { text: "OK", onPress: () => navigation.navigate("Login") },
             ]);
@@ -93,7 +93,6 @@ const ProfileScreen = ({ route, navigation }) => {
         const currentUser = auth.currentUser;
         const userDocRef = doc(db, "users", currentUser.email);
 
-        // Remove email from the data to update (since it's the document ID)
         const { email, ...dataToUpdate } = userData;
 
         await updateDoc(userDocRef, dataToUpdate);
@@ -110,7 +109,7 @@ const ProfileScreen = ({ route, navigation }) => {
   };
 
   const handleResetPassword = () => {
-    // Logic to reset password
+    
     Alert.alert("Reset Password", "Are you sure you want to reset your password?", [
       {
         text: "Cancel",
@@ -119,7 +118,7 @@ const ProfileScreen = ({ route, navigation }) => {
       {
         text: "Yes",
         onPress: () => {
-          // Implement password reset logic here
+         
           if (auth && auth.currentUser) {
             auth
               .sendPasswordResetEmail(auth.currentUser.email)
@@ -144,8 +143,8 @@ const ProfileScreen = ({ route, navigation }) => {
       .then(() => {
         Alert.alert("Success", "You have been signed out.");
         navigation.reset({
-            index: 0, // Establece el índice en 0 para que el Login sea la única pantalla en la pila
-            routes: [{ name: "Login" }], // Define el nombre de la pantalla a la que debe navegar después de cerrar sesión
+            index: 0,
+            routes: [{ name: "Login" }], 
           });
       })
       .catch((error) => {
@@ -196,7 +195,6 @@ const ProfileScreen = ({ route, navigation }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        {/* Aquí cambiamos a Avatar.Image si profileImage está disponible */}
         {userData?.profileImage ? (
           <Avatar.Image
             size={120}

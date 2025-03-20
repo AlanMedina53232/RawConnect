@@ -35,7 +35,6 @@ const GradientBackground = ({ colors, style, children }) => (
   </View>
 );
 
-// 📦 Tarjeta de categoría (ahora acepta la prop onPress)
 const CategoryCard = ({ title, icon, imagePrompt, onPress }) => (
   <TouchableOpacity style={styles.categoryCard} onPress={onPress}>
     <Image
@@ -51,7 +50,6 @@ const CategoryCard = ({ title, icon, imagePrompt, onPress }) => (
   </TouchableOpacity>
 );
 
-// 🏠 Pantalla principal (HomeScreen)
 const HomeScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container}>
@@ -63,7 +61,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.categoriesContainer}>
         <Text style={styles.sectionTitle}>Categorías</Text>
         <View style={styles.categoriesGrid}>
-          {/* 🔗 Ahora el botón de Productos Agrícolas navega a la pantalla "Categorys" */}
+
           <CategoryCard
             title="Productos Agrícolas"
             icon={<MaterialCommunityIcons name="tractor" size={40} color="white" />}
@@ -110,8 +108,8 @@ const handleSignOut = (navigation) => {
     .then(() => {
       Alert.alert("Success", "You have been signed out.");
       navigation.reset({
-        index: 0, // Establece el índice en 0 para que el Login sea la única pantalla en la pila
-        routes: [{ name: "Login" }], // Define el nombre de la pantalla a la que debe navegar después de cerrar sesión
+        index: 0, 
+        routes: [{ name: "Login" }], 
       });
     })
     .catch((error) => {
@@ -122,7 +120,7 @@ const handleSignOut = (navigation) => {
 
 
 
-// 📋 Menú lateral (DrawerContent)
+
 const DrawerContent = (props) => (
   <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.drawerContent}>
     <View style={styles.drawerHeader}>
@@ -151,7 +149,7 @@ const DrawerContent = (props) => (
       <Button
   icon="logout"
   mode="contained"
-  onPress={() => handleSignOut(props.navigation)} // Pasar `props.navigation` aquí
+  onPress={() => handleSignOut(props.navigation)}
   style={styles.signOutButton}
 >
   Sign Out
@@ -161,7 +159,7 @@ const DrawerContent = (props) => (
   </GradientBackground>
 );
 
-// 🗂️ Configuración del Drawer Navigator
+
 const MainBuyer = () => {
   return (
     <Drawer.Navigator

@@ -15,7 +15,6 @@ const MainProducer = () => {
       try {
         const currentUser = auth.currentUser
         if (currentUser) {
-          // Get user profile data from Firestore
           const userDocRef = doc(db, "users", currentUser.email)
           const userDoc = await getDoc(userDocRef)
 
@@ -25,7 +24,6 @@ const MainProducer = () => {
               ...userDoc.data(),
             })
           } else {
-            // If no user document exists, just use the auth data
             setUserData({
               email: currentUser.email,
               fullName: currentUser.displayName || "Producer",
@@ -50,7 +48,6 @@ const MainProducer = () => {
         {!loading && (
           <Card style={styles.userCard}>
             <Card.Content style={styles.userCardContent}>
-              {/* Verifica si hay una URL de imagen de perfil */}
               {userData?.profileImage ? (
                 <Avatar.Image
                   size={50}
@@ -169,6 +166,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 })
-
 export default MainProducer
-
