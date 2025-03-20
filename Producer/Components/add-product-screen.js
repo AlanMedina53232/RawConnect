@@ -25,8 +25,6 @@ const AddProductScreen = () => {
         price: "",
         minimumOrder: "",
         deliveryOptions: "",
-        paymentType: "",
-        salesConditions: "",
     })
 
     const updateProduct = (field, value) => {
@@ -173,28 +171,6 @@ const AddProductScreen = () => {
                     activeOutlineColor="#1565C0"
                     multiline
                     numberOfLines={2}
-                />
-
-                <TextInput
-                    label="Payment Type"
-                    value={product.paymentType}
-                    onChangeText={(text) => updateProduct("paymentType", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                />
-
-                <TextInput
-                    label="Sales Conditions"
-                    value={product.salesConditions}
-                    onChangeText={(text) => updateProduct("salesConditions", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                    multiline
-                    numberOfLines={3}
                 />
 
                 <ImageUploader
