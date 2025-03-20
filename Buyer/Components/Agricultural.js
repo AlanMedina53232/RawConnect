@@ -1,9 +1,11 @@
 "use client"
 
 import { Ionicons } from "@expo/vector-icons"
-import { useState } from "react"
-import { Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { useState , useEffect} from "react"
+import {Image, Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import {  collection, query, where, getDocs } from "firebase/firestore"; 
 
+import { db } from "../../config/fb"; 
 
 const { width } = Dimensions.get("window")
 
@@ -22,48 +24,42 @@ const COLORS = {
 export default function DetailsBuyer({ navigation }) {
     
     
-    const [products, setProducts] = useState([
-        {
-            id: "1",
-            name: "Producto Empresarial 1",
-            price: "$1,299.99",
-            rating: 4.5,
-            description: "Descripción breve del producto",
-            category: "Tecnología",
-        },
-        {
-            id: "2",
-            name: "Producto Empresarial 2",
-            price: "$899.99",
-            rating: 4.2,
-            description: "Descripción breve del producto",
-            category: "Oficina",
-        },
-        {
-            id: "3",
-            name: "Producto Empresarial 3",
-            price: "$2,499.99",
-            rating: 4.8,
-            description: "Descripción breve del producto",
-            category: "Tecnología",
-        },
-        {
-            id: "4",
-            name: "Producto Empresarial 4",
-            price: "$599.99",
-            rating: 4.0,
-            description: "Descripción breve del producto",
-            category: "Mobiliario",
-        },
-        {
-            id: "5",
-            name: "Producto Empresarial 5",
-            price: "$1,799.99",
-            rating: 4.7,
-            description: "Descripción breve del producto",
-            category: "Servicios",
-        },
-    ])
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+          try {
+            
+            const productsCollection = collection(db, "products");
+    
+            
+            const q = query(productsCollection, where("category", "==", "Agricultural"));
+    
+            
+            const querySnapshot = await getDocs(q);
+    
+            
+            console.log("Cantidad de productos encontrados: ", querySnapshot.size);
+    
+            
+            const productsList = querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+    
+            
+            console.log("Productos obtenidos: ", productsList);
+    
+            
+            setProducts(productsList);
+          } catch (error) {
+            console.error("Error obteniendo productos: ", error);
+          }
+        };
+    
+        fetchProducts();
+      }, []); 
+    
 
     
     const categories = ["Agricultural", "Minerals", "Forestry", "Chemicals"]
@@ -155,10 +151,16 @@ export default function DetailsBuyer({ navigation }) {
                                 onPress={() => navigateToProductDetails(product)}
                             >
                                 
-                                <View style={styles.featuredImagePlaceholder}>
-                                    <Text style={styles.imagePlaceholderText}>Imagen</Text>
-                                    <Text style={styles.imagePlaceholderText}>350 x 200</Text>
-                                </View>
+                                {product.imageUrl ? (
+                                    <Image
+                                      source={{ uri: product.imageUrl }}
+                                      style={styles.productImage}
+                                    />
+                                  ) : (
+                                    <View style={styles.productImagePlaceholder}>
+                                      <Text style={styles.imagePlaceholderText}>Image</Text>
+                                    </View>
+                                  )}
                                 <View style={styles.featuredProductInfo}>
                                     <Text style={styles.productCategory}>{product.category}</Text>
                                     <Text style={styles.featuredProductName} numberOfLines={1}>
@@ -173,34 +175,40 @@ export default function DetailsBuyer({ navigation }) {
                 </View>
 
                 
-                <View style={styles.allProductsContainer}>
-                    <Text style={styles.sectionTitle}>Todos los Productos</Text>
-                    <View style={styles.productsGrid}>
-                        {products.map((product) => (
-                            <TouchableOpacity
-                                key={product.id}
-                                style={styles.productCard}
-                                onPress={() => navigateToProductDetails(product)}
-                            >
-                                
-                                <View style={styles.productImagePlaceholder}>
-                                    <Text style={styles.imagePlaceholderText}>Imagen</Text>
-                                    <Text style={styles.imagePlaceholderText}>150 x 150</Text>
-                                </View>
-                                <View style={styles.productInfo}>
+                 <View style={styles.allProductsContainer}>
+                          <Text style={styles.sectionTitle}>Productos "Agricultural"</Text>
+                          <View style={styles.productsGrid}>
+                            {products.length === 0 ? (
+                              <Text>No hay productos disponibles en esta categoría.</Text>
+                            ) : (
+                              products.map((product) => (
+                                <TouchableOpacity key={product.id} style={styles.productCard}>
+                                  
+                                  {product.imageUrl ? (
+                                    <Image
+                                      source={{ uri: product.imageUrl }}
+                                      style={styles.productImage}
+                                    />
+                                  ) : (
+                                    <View style={styles.productImagePlaceholder}>
+                                      <Text style={styles.imagePlaceholderText}>Image</Text>
+                                    </View>
+                                  )}
+                                  <View style={styles.productInfo}>
                                     <Text style={styles.productName} numberOfLines={1}>
-                                        {product.name}
+                                      {product.name}
                                     </Text>
-                                    <Text style={styles.productPrice}>{product.price}</Text>
-                                    {renderStars(product.rating)}
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
+                                    <Text style={styles.productPrice}>${product.price}</Text>
+                                    {renderStars(product.rating || 0)} 
+                                  </View>
+                                </TouchableOpacity>
+                              ))
+                            )}
+                          </View>
+                        </View>
             </ScrollView>
         </SafeAreaView>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -289,6 +297,12 @@ const styles = StyleSheet.create({
         elevation: 5,
         overflow: "hidden",
     },
+    productImage: {
+        height: 150,
+        width: "100%",
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+      },
     featuredImagePlaceholder: {
         height: 180,
         backgroundColor: COLORS.secondary,
