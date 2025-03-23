@@ -1,19 +1,29 @@
 "use client"
 
 import { Ionicons } from "@expo/vector-icons"
-import { useState , useEffect} from "react"
-import {Image, Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
-import {  collection, query, where, getDocs } from "firebase/firestore"; 
+import { collection, getDocs, query, where } from "firebase/firestore"
+import { useEffect, useState } from "react"
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native"
 
-import { db } from "../../config/fb"; 
+import { db } from "../../config/fb"
 
 const { width } = Dimensions.get("window")
 
-
 const COLORS = {
-    primary: "#00BCD4", 
-    secondary: "#80DEEA", 
-    accent: "#0097A7", 
+    primary: "#00BCD4",
+    secondary: "#80DEEA",
+    accent: "#0097A7",
     white: "#FFFFFF",
     lightGray: "#F5F5F5",
     gray: "#9E9E9E",
@@ -21,52 +31,64 @@ const COLORS = {
     textLight: "#546E7A",
 }
 
-export default function DetailsBuyer({ navigation }) {
-    
-    
-    const [products, setProducts] = useState([]);
+export default function Agricultural({ navigation, route }) {
+    const [products, setProducts] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    // Get the initialCategory from route params or default to "Agricultural"
+    const initialCategory = route.params?.initialCategory || "Agricultural"
+    const [selectedCategory, setSelectedCategory] = useState(initialCategory)
+
+    const categories = ["All", "Agricultural", "Mineral", "Forestal", "Chemical"]
+
+    // Update selected category when route params change
+    useEffect(() => {
+        if (route.params?.initialCategory) {
+            setSelectedCategory(route.params.initialCategory)
+        }
+    }, [route.params?.initialCategory])
 
     useEffect(() => {
-        const fetchProducts = async () => {
-          try {
-            
-            const productsCollection = collection(db, "products");
-    
-            
-            const q = query(productsCollection, where("category", "==", "Agricultural"));
-    
-            
-            const querySnapshot = await getDocs(q);
-    
-            
-            console.log("Cantidad de productos encontrados: ", querySnapshot.size);
-    
-            
+        fetchProducts(selectedCategory)
+    }, [selectedCategory])
+
+    const fetchProducts = async (category) => {
+        try {
+            setLoading(true)
+            const productsCollection = collection(db, "products")
+
+            let q
+            if (category === "All") {
+                // Fetch all products
+                q = query(productsCollection)
+                console.log("Fetching all products")
+            } else {
+                // Fetch products by category
+                q = query(productsCollection, where("category", "==", category))
+                console.log(`Fetching products with category: ${category}`)
+            }
+
+            const querySnapshot = await getDocs(q)
+
+            console.log("Number of products found:", querySnapshot.size)
+
             const productsList = querySnapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-    
-            
-            console.log("Productos obtenidos: ", productsList);
-    
-            
-            setProducts(productsList);
-          } catch (error) {
-            console.error("Error obteniendo productos: ", error);
-          }
-        };
-    
-        fetchProducts();
-      }, []); 
-    
+                id: doc.id,
+                ...doc.data(),
+                // Add default rating if not present
+                rating: doc.data().rating || 4.5,
+            }))
 
-    
-    const categories = ["Agricultural", "Minerals", "Forestry", "Chemicals"]
+            console.log("Products retrieved:", productsList)
 
-    const [selectedCategory, setSelectedCategory] = useState("Todos")
+            setProducts(productsList)
+        } catch (error) {
+            console.error("Error fetching products:", error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
-    
     const renderStars = (rating) => {
         const stars = []
         const fullStars = Math.floor(rating)
@@ -85,33 +107,39 @@ export default function DetailsBuyer({ navigation }) {
         return (
             <View style={styles.ratingContainer}>
                 {stars}
-                <Text style={styles.ratingText}>{rating}</Text>
+                <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
             </View>
         )
     }
 
-    
     const navigateToProductDetails = (product) => {
-        
         navigation.navigate("ProductDetails", { product })
     }
+
+    // Update the screen title based on the selected category
+    useEffect(() => {
+        navigation.setOptions({
+            title: selectedCategory === "All" ? "All Products" : `${selectedCategory} Products`,
+        })
+    }, [selectedCategory, navigation])
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor={COLORS.white} barStyle="dark-content" />
 
-            
             <View style={styles.header}>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                </TouchableOpacity>
                 <View>
                     <Text style={styles.headerTitle}>Marketplace</Text>
-                    <Text style={styles.headerSubtitle}>Encuentra los mejores productos empresariales</Text>
+                    <Text style={styles.headerSubtitle}>Find the best business products</Text>
                 </View>
                 <TouchableOpacity style={styles.searchButton}>
                     <Ionicons name="search-outline" size={24} color={COLORS.text} />
                 </TouchableOpacity>
             </View>
 
-            
             <View style={styles.categoriesContainer}>
                 <ScrollView
                     horizontal
@@ -134,81 +162,88 @@ export default function DetailsBuyer({ navigation }) {
                 </ScrollView>
             </View>
 
-            
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.productsContainer}>
-                
-                <View style={styles.featuredContainer}>
-                    <Text style={styles.sectionTitle}>Productos Destacados</Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.featuredScrollView}
-                    >
-                        {products.slice(0, 3).map((product) => (
-                            <TouchableOpacity
-                                key={product.id}
-                                style={styles.featuredProductCard}
-                                onPress={() => navigateToProductDetails(product)}
-                            >
-                                
-                                {product.imageUrl ? (
-                                    <Image
-                                      source={{ uri: product.imageUrl }}
-                                      style={styles.productImage}
-                                    />
-                                  ) : (
-                                    <View style={styles.productImagePlaceholder}>
-                                      <Text style={styles.imagePlaceholderText}>Image</Text>
-                                    </View>
-                                  )}
-                                <View style={styles.featuredProductInfo}>
-                                    <Text style={styles.productCategory}>{product.category}</Text>
-                                    <Text style={styles.featuredProductName} numberOfLines={1}>
-                                        {product.name}
-                                    </Text>
-                                    <Text style={styles.featuredProductPrice}>${product.price}</Text>
-                                    {renderStars(product.rating)}
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={styles.loadingText}>Loading products...</Text>
                 </View>
+            ) : (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.productsContainer}>
+                    {products.length > 0 ? (
+                        <>
+                            <View style={styles.featuredContainer}>
+                                <Text style={styles.sectionTitle}>Featured Products</Text>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.featuredScrollView}
+                                >
+                                    {products.slice(0, Math.min(3, products.length)).map((product) => (
+                                        <TouchableOpacity
+                                            key={product.id}
+                                            style={styles.featuredProductCard}
+                                            onPress={() => navigateToProductDetails(product)}
+                                        >
+                                            {product.imageUrl ? (
+                                                <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+                                            ) : (
+                                                <View style={styles.productImagePlaceholder}>
+                                                    <Ionicons name="image-outline" size={40} color={COLORS.white} />
+                                                </View>
+                                            )}
+                                            <View style={styles.featuredProductInfo}>
+                                                <Text style={styles.productCategory}>{product.category}</Text>
+                                                <Text style={styles.featuredProductName} numberOfLines={1}>
+                                                    {product.name}
+                                                </Text>
+                                                <Text style={styles.featuredProductPrice}>${product.price}</Text>
+                                                {renderStars(product.rating)}
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
 
-                
-                 <View style={styles.allProductsContainer}>
-                          <Text style={styles.sectionTitle}>Productos "Agricultural"</Text>
-                          <View style={styles.productsGrid}>
-                            {products.length === 0 ? (
-                              <Text>No hay productos disponibles en esta categoría.</Text>
-                            ) : (
-                              products.map((product) => (
-                                <TouchableOpacity key={product.id} style={styles.productCard}>
-                                  
-                                  {product.imageUrl ? (
-                                    <Image
-                                      source={{ uri: product.imageUrl }}
-                                      style={styles.productImage}
-                                    />
-                                  ) : (
-                                    <View style={styles.productImagePlaceholder}>
-                                      <Text style={styles.imagePlaceholderText}>Image</Text>
-                                    </View>
-                                  )}
-                                  <View style={styles.productInfo}>
-                                    <Text style={styles.productName} numberOfLines={1}>
-                                      {product.name}
-                                    </Text>
-                                    <Text style={styles.productPrice}>${product.price}</Text>
-                                    {renderStars(product.rating || 0)} 
-                                  </View>
-                                </TouchableOpacity>
-                              ))
-                            )}
-                          </View>
+                            <View style={styles.allProductsContainer}>
+                                <Text style={styles.sectionTitle}>
+                                    {selectedCategory === "All" ? "All Products" : `${selectedCategory} Products`}
+                                </Text>
+                                <View style={styles.productsGrid}>
+                                    {products.map((product) => (
+                                        <TouchableOpacity
+                                            key={product.id}
+                                            style={styles.productCard}
+                                            onPress={() => navigateToProductDetails(product)}
+                                        >
+                                            {product.imageUrl ? (
+                                                <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+                                            ) : (
+                                                <View style={styles.productImagePlaceholder}>
+                                                    <Ionicons name="image-outline" size={30} color={COLORS.white} />
+                                                </View>
+                                            )}
+                                            <View style={styles.productInfo}>
+                                                <Text style={styles.productName} numberOfLines={1}>
+                                                    {product.name}
+                                                </Text>
+                                                <Text style={styles.productPrice}>${product.price}</Text>
+                                                {renderStars(product.rating)}
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        </>
+                    ) : (
+                        <View style={styles.noProductsContainer}>
+                            <Ionicons name="alert-circle-outline" size={60} color={COLORS.gray} />
+                            <Text style={styles.noProductsText}>No products available in this category</Text>
                         </View>
-            </ScrollView>
+                    )}
+                </ScrollView>
+            )}
         </SafeAreaView>
-    );
+    )
 }
 
 const styles = StyleSheet.create({
@@ -225,15 +260,25 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
         backgroundColor: COLORS.white,
     },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.lightGray,
+        justifyContent: "center",
+        alignItems: "center",
+    },
     headerTitle: {
         fontSize: 24,
         fontWeight: "bold",
         color: COLORS.text,
+        textAlign: "center",
     },
     headerSubtitle: {
         fontSize: 14,
         color: COLORS.textLight,
         marginTop: 2,
+        textAlign: "center",
     },
     searchButton: {
         width: 40,
@@ -268,8 +313,29 @@ const styles = StyleSheet.create({
     categoryButtonTextActive: {
         color: COLORS.white,
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: COLORS.textLight,
+    },
     productsContainer: {
         paddingBottom: 20,
+    },
+    noProductsContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingTop: 100,
+    },
+    noProductsText: {
+        fontSize: 16,
+        color: COLORS.gray,
+        marginTop: 10,
     },
     sectionTitle: {
         fontSize: 18,
@@ -302,12 +368,6 @@ const styles = StyleSheet.create({
         width: "100%",
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
-      },
-    featuredImagePlaceholder: {
-        height: 180,
-        backgroundColor: COLORS.secondary,
-        justifyContent: "center",
-        alignItems: "center",
     },
     productImagePlaceholder: {
         height: 150,
@@ -316,11 +376,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
-    },
-    imagePlaceholderText: {
-        color: COLORS.white,
-        fontSize: 14,
-        fontWeight: "500",
     },
     featuredProductInfo: {
         padding: 15,

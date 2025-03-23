@@ -3,9 +3,7 @@ import { createStackNavigator } from "@react-navigation/stack"
 import { StyleSheet, TouchableOpacity } from "react-native"
 import { DefaultTheme, Provider as PaperProvider, Text } from "react-native-paper"
 import Agricultural from "./Buyer/Components/Agricultural"
-import Chemicals from "./Buyer/Components/Chemicals"
-import Forestry from "./Buyer/Components/Forestry"
-import Minerals from "./Buyer/Components/Minerals"
+
 import ProductDetails from "./Buyer/Components/ProductDetails"
 
 import MainBuyer from "./Buyer/MainBuyer"
@@ -70,9 +68,6 @@ function App() {
             }}
           />
           <Stack.Screen name="Agricultural" component={Agricultural} />
-          <Stack.Screen name="Chemicals" component={Chemicals} />
-          <Stack.Screen name="Forestry" component={Forestry} />
-          <Stack.Screen name="Minerals" component={Minerals} />
           <Stack.Screen name="ProductDetails" component={ProductDetails} />
           <Stack.Screen
             name="ProfileScreen"

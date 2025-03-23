@@ -1,20 +1,18 @@
-import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { createDrawerNavigator } from "@react-navigation/drawer";
-import { LinearGradient } from "expo-linear-gradient";
-import { Alert, Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Button, Text } from "react-native-paper";
-import { auth, db, doc, getDoc, setDoc, updateDoc, signOut } from "../config/fb.js";
+import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
+import { createDrawerNavigator } from "@react-navigation/drawer"
+import { LinearGradient } from "expo-linear-gradient"
+import { Alert, Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native"
+import { Button, Text } from "react-native-paper"
+import { auth, signOut } from "../config/fb.js"
 
-import Agricultural from "./Components/Agricultural";
-import Chemicals from "./Components/Chemicals";
-import Forestry from "./Components/Forestry";
-import Minerals from "./Components/Minerals";
-import ProductDetails from "./Components/ProductDetails";
+import Agricultural from "./Components/Agricultural"
 
-import ProfileScreen from "./Components/ProfileScreen";
+import ProductDetails from "./Components/ProductDetails"
 
-const { width } = Dimensions.get("window");
-const Drawer = createDrawerNavigator();
+import ProfileScreen from "./Components/ProfileScreen"
+
+const { width } = Dimensions.get("window")
+const Drawer = createDrawerNavigator()
 
 // 🌈 Fondo con gradiente
 const GradientBackground = ({ colors, style, children }) => (
@@ -33,7 +31,7 @@ const GradientBackground = ({ colors, style, children }) => (
     ))}
     {children}
   </View>
-);
+)
 
 const CategoryCard = ({ title, icon, imagePrompt, onPress }) => (
   <TouchableOpacity style={styles.categoryCard} onPress={onPress}>
@@ -48,9 +46,14 @@ const CategoryCard = ({ title, icon, imagePrompt, onPress }) => (
       </View>
     </LinearGradient>
   </TouchableOpacity>
-);
+)
 
 const HomeScreen = ({ navigation }) => {
+  // Function to navigate to Agricultural with the selected category
+  const navigateToCategory = (category) => {
+    navigation.navigate("Agricultural", { initialCategory: category })
+  }
+
   return (
     <ScrollView style={styles.container}>
       <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.header}>
@@ -61,29 +64,28 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.categoriesContainer}>
         <Text style={styles.sectionTitle}>Categorías</Text>
         <View style={styles.categoriesGrid}>
-
           <CategoryCard
             title="Productos Agrícolas"
             icon={<MaterialCommunityIcons name="tractor" size={40} color="white" />}
-            onPress={() => navigation.navigate("Agricultural")}
+            onPress={() => navigateToCategory("Agricultural")}
             imagePrompt="modern agricultural machinery in a vast golden wheat field at sunset, dramatic lighting"
           />
           <CategoryCard
             title="Minerales y Metales"
             icon={<MaterialCommunityIcons name="mine" size={40} color="white" />}
-            onPress={() => navigation.navigate("Minerals")}
+            onPress={() => navigateToCategory("Mineral")}
             imagePrompt="industrial mining operation with massive machinery and raw minerals, dramatic industrial scene"
           />
           <CategoryCard
             title="Productos Forestales"
             icon={<FontAwesome5 name="tree" size={40} color="white" />}
-            onPress={() => navigation.navigate("Forestry")}
+            onPress={() => navigateToCategory("Forestal")}
             imagePrompt="sustainable forestry operation with lumber mill and forest management, morning mist"
           />
           <CategoryCard
             title="Químicos y Petroquímicos"
             icon={<MaterialIcons name="science" size={40} color="white" />}
-            onPress={() => navigation.navigate("Chemicals")}
+            onPress={() => navigateToCategory("Chemical")}
             imagePrompt="modern chemical plant with sophisticated equipment and blue lighting, industrial scene"
           />
         </View>
@@ -100,26 +102,23 @@ const HomeScreen = ({ navigation }) => {
         </ScrollView>
       </View>
     </ScrollView>
-  );
-};
+  )
+}
 
 const handleSignOut = (navigation) => {
   signOut(auth)
     .then(() => {
-      Alert.alert("Success", "You have been signed out.");
+      Alert.alert("Success", "You have been signed out.")
       navigation.reset({
-        index: 0, 
-        routes: [{ name: "Login" }], 
-      });
+        index: 0,
+        routes: [{ name: "Login" }],
+      })
     })
     .catch((error) => {
-      console.error("Error signing out: ", error);
-      Alert.alert("Error", "An error occurred while signing out.");
-    });
-};
-
-
-
+      console.error("Error signing out: ", error)
+      Alert.alert("Error", "An error occurred while signing out.")
+    })
+}
 
 const DrawerContent = (props) => (
   <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.drawerContent}>
@@ -147,18 +146,16 @@ const DrawerContent = (props) => (
         Configuración
       </Button>
       <Button
-  icon="logout"
-  mode="contained"
-  onPress={() => handleSignOut(props.navigation)}
-  style={styles.signOutButton}
->
-  Sign Out
-</Button>
-
+        icon="logout"
+        mode="contained"
+        onPress={() => handleSignOut(props.navigation)}
+        style={styles.signOutButton}
+      >
+        Sign Out
+      </Button>
     </View>
   </GradientBackground>
-);
-
+)
 
 const MainBuyer = () => {
   return (
@@ -177,17 +174,13 @@ const MainBuyer = () => {
       <Drawer.Screen name="Home" component={HomeScreen} />
       <Drawer.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
       <Drawer.Screen name="Agricultural" component={Agricultural} options={{ title: "Agricultural" }} />
-      <Drawer.Screen name="Chemicals" component={Chemicals} options={{ title: "Chemicals" }} />
-      <Drawer.Screen name="Forestry" component={Forestry} options={{ title: "Forestry" }} />
-      <Drawer.Screen name="Minerals" component={Minerals} options={{ title: "Minerals" }} />
-      <Drawer.Screen name="ProductDetails" component={ProductDetails} options={{ title: "ProductDetails" }} />
 
+      <Drawer.Screen name="ProductDetails" component={ProductDetails} options={{ title: "ProductDetails" }} />
     </Drawer.Navigator>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
-
   signOutButton: {
     marginTop: 20,
     backgroundColor: "#D32F2F",

@@ -2,84 +2,71 @@
 
 import { Ionicons } from "@expo/vector-icons"
 import { useState } from "react"
-import { Dimensions, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native"
-
+import {
+    Dimensions,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native"
 
 const { width } = Dimensions.get("window")
 
-
 const COLORS = {
-    primary: "#00BCD4", 
-    secondary: "#80DEEA", 
-    accent: "#0097A7", 
+    primary: "#0D47A1", // Changed to match the producer app theme
+    secondary: "#1976D2",
+    accent: "#2196F3",
     white: "#FFFFFF",
     lightGray: "#F5F5F5",
     gray: "#9E9E9E",
     text: "#263238",
     textLight: "#546E7A",
+    background: "#ECEFF1",
 }
 
 export default function ProductDetails({ route, navigation }) {
-
     const { product } = route.params
-
-
-    const [productDetails, setProductDetails] = useState({
-        ...product,
-        description:
-            "Este es un producto empresarial de alta calidad diseñado para satisfacer las necesidades de su empresa. Fabricado con materiales duraderos y tecnología de vanguardia, este producto ofrece un rendimiento excepcional y una larga vida útil.",
-        features: [
-            "Característica 1: Alta durabilidad",
-            "Característica 2: Eficiencia energética",
-            "Característica 3: Fácil integración",
-            "Característica 4: Soporte técnico incluido",
-            "Característica 5: Garantía extendida",
-        ],
-        specifications: {
-            Dimensiones: "30 x 20 x 10 cm",
-            Peso: "1.5 kg",
-            Material: "Aluminio y polímeros de alta resistencia",
-            Garantía: "2 años",
-            Origen: "Importado",
-        },
-        stock: 15,
-        seller: {
-            name: "Empresa Proveedora S.A.",
-            rating: 4.7,
-            verified: true,
-        },
-    })
-
-    
     const [quantity, setQuantity] = useState(1)
 
-    const renderStars = (rating) => {
-        const stars = []
-        const fullStars = Math.floor(rating)
-        const halfStar = rating - fullStars >= 0.5
+    // Format the createdAt timestamp
+    const formatDate = (timestamp) => {
+        if (!timestamp) return "N/A"
 
-        for (let i = 0; i < 5; i++) {
-            if (i < fullStars) {
-                stars.push(<Ionicons key={i} name="star" size={16} color={COLORS.primary} />)
-            } else if (i === fullStars && halfStar) {
-                stars.push(<Ionicons key={i} name="star-half" size={16} color={COLORS.primary} />)
-            } else {
-                stars.push(<Ionicons key={i} name="star-outline" size={16} color={COLORS.primary} />)
+        try {
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+            return date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            })
+        } catch (error) {
+            console.error("Error formatting date:", error)
+            return "N/A"
+        }
+    }
+
+    // Parse specifications if it's a string
+    const getSpecifications = () => {
+        if (!product.specifications) return {}
+
+        if (typeof product.specifications === "string") {
+            try {
+                return JSON.parse(product.specifications)
+            } catch (e) {
+                // If it's not valid JSON, return it as a single specification
+                return { Details: product.specifications }
             }
         }
 
-        return (
-            <View style={styles.ratingContainer}>
-                {stars}
-                <Text style={styles.ratingText}>{rating}</Text>
-            </View>
-        )
+        return product.specifications
     }
 
     const incrementQuantity = () => {
-        if (quantity < productDetails.stock) {
-            setQuantity(quantity + 1)
-        }
+        setQuantity(quantity + 1)
     }
 
     const decrementQuantity = () => {
@@ -89,7 +76,7 @@ export default function ProductDetails({ route, navigation }) {
     }
 
     const addToCart = () => {
-        alert(`Agregado al carrito: ${quantity} unidades de ${productDetails.name}`)
+        alert(`Added to cart: ${quantity} units of ${product.name}`)
     }
 
     return (
@@ -100,106 +87,87 @@ export default function ProductDetails({ route, navigation }) {
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Detalles del Producto</Text>
-                <TouchableOpacity style={styles.favoriteButton}>
-                    <Ionicons name="heart-outline" size={24} color={COLORS.text} />
-                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Product Details</Text>
+                <View style={{ width: 40 }} /> {/* Empty view for spacing */}
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.imageContainer}>
-                    <View style={styles.productImagePlaceholder}>
-                        {product.imageUrl ? (
-                                                            <Image
-                                                              source={{ uri: product.imageUrl }}
-                                                              style={styles.productImage}
-                                                            />
-                                                          ) : (
-                                                            <View style={styles.productImagePlaceholder}>
-                                                              <Text style={styles.imagePlaceholderText}>Image</Text>
-                                                            </View>
-                                                          )}
-                    </View>
+                    {product.imageUrl ? (
+                        <Image source={{ uri: product.imageUrl }} style={styles.productImage} resizeMode="cover" />
+                    ) : (
+                        <View style={styles.productImagePlaceholder}>
+                            <Ionicons name="image-outline" size={80} color={COLORS.white} />
+                            <Text style={styles.imagePlaceholderText}>No Image Available</Text>
+                        </View>
+                    )}
 
-                    
-                    <View style={styles.stockIndicator}>
-                        <Text style={styles.stockText}>
-                            {productDetails.stock > 0 ? `${productDetails.stock} disponibles` : "Agotado"}
-                        </Text>
+                    <View style={styles.categoryBadge}>
+                        <Text style={styles.categoryText}>{product.category}</Text>
                     </View>
                 </View>
 
-                
                 <View style={styles.productInfoContainer}>
-                    <Text style={styles.productCategory}>{product.category}</Text>
-                    <Text style={styles.productName}>{product.name}</Text>
-                    <View style={styles.priceRatingRow}>
+                    <View style={styles.nameAndPriceContainer}>
+                        <Text style={styles.productName}>{product.name}</Text>
                         <Text style={styles.productPrice}>${product.price}</Text>
-                        {renderStars(productDetails.rating)}
                     </View>
 
-                    
-                    <View style={styles.sellerContainer}>
-                        <Text style={styles.sellerLabel}>Vendedor:</Text>
-                        <View style={styles.sellerInfo}>
-                            <Text style={styles.sellerName}>{productDetails.seller.name}</Text>
-                            {productDetails.seller.verified && (
-                                <View style={styles.verifiedBadge}>
-                                    <Ionicons name="checkmark-circle" size={14} color={COLORS.white} />
-                                    <Text style={styles.verifiedText}>Verificado</Text>
+                    <View style={styles.dateContainer}>
+                        <Ionicons name="calendar-outline" size={16} color={COLORS.textLight} />
+                        <Text style={styles.dateText}>Listed on: {formatDate(product.createdAt)}</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionTitle}>Description</Text>
+                        <Text style={styles.descriptionText}>{product.description || "No description available"}</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionTitle}>Specifications</Text>
+                        {Object.entries(getSpecifications()).length > 0 ? (
+                            Object.entries(getSpecifications()).map(([key, value], index) => (
+                                <View key={index} style={styles.specificationItem}>
+                                    <Text style={styles.specificationKey}>{key}:</Text>
+                                    <Text style={styles.specificationValue}>{value}</Text>
                                 </View>
-                            )}
+                            ))
+                        ) : (
+                            <Text style={styles.noDataText}>No specifications available</Text>
+                        )}
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionTitle}>Order Information</Text>
+                        <View style={styles.orderInfoItem}>
+                            <Ionicons name="cube-outline" size={20} color={COLORS.primary} />
+                            <Text style={styles.orderInfoText}>
+                                Minimum Order: {product.minimumOrder || 1} {product.minimumOrder > 1 ? "units" : "unit"}
+                            </Text>
                         </View>
-                    </View>
-
-                  
-                    <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Descripción</Text>
-                        <Text style={styles.descriptionText}>{product.description}</Text>
-                    </View>
-
-                   
-                    <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Características</Text>
-                        {productDetails.features.map((feature, index) => (
-                            <View key={index} style={styles.featureItem}>
-                                <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
-                                <Text style={styles.featureText}>{feature}</Text>
-                            </View>
-                        ))}
-                    </View>
-
-                    
-                    <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Especificaciones</Text>
-                        {Object.entries(productDetails.specifications).map(([key, value], index) => (
-                            <View key={index} style={styles.specificationItem}>
-                                <Text style={styles.specificationKey}>{key}:</Text>
-                                <Text style={styles.specificationValue}>{value}</Text>
-                            </View>
-                        ))}
                     </View>
                 </View>
             </ScrollView>
 
-            
             <View style={styles.footer}>
                 <View style={styles.quantitySelector}>
                     <TouchableOpacity style={styles.quantityButton} onPress={decrementQuantity} disabled={quantity <= 1}>
                         <Ionicons name="remove" size={20} color={quantity <= 1 ? COLORS.gray : COLORS.text} />
                     </TouchableOpacity>
                     <Text style={styles.quantityText}>{quantity}</Text>
-                    <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={incrementQuantity}
-                        disabled={quantity >= productDetails.stock}
-                    >
-                        <Ionicons name="add" size={20} color={quantity >= productDetails.stock ? COLORS.gray : COLORS.text} />
+                    <TouchableOpacity style={styles.quantityButton} onPress={incrementQuantity}>
+                        <Ionicons name="add" size={20} color={COLORS.text} />
                     </TouchableOpacity>
                 </View>
                 <TouchableOpacity style={styles.addToCartButton} onPress={addToCart}>
                     <Ionicons name="cart-outline" size={20} color={COLORS.white} />
-                    <Text style={styles.addToCartText}>Agregar al Carrito</Text>
+                    <Text style={styles.addToCartText}>Add to Cart</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -209,17 +177,16 @@ export default function ProductDetails({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 15,
-        paddingVertical: 10,
+        paddingVertical: 15,
         backgroundColor: COLORS.white,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.lightGray,
+        elevation: 2,
     },
     backButton: {
         width: 40,
@@ -227,136 +194,91 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: COLORS.lightGray,
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: "bold",
         color: COLORS.text,
     },
-    favoriteButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: "center",
-        alignItems: "center",
-    },
     imageContainer: {
         width: "100%",
         height: 300,
         position: "relative",
+        backgroundColor: COLORS.white,
     },
     productImage: {
-        height: 400,
         width: "100%",
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
-      },
-    featuredImagePlaceholder: {
-        height: 180,
-        backgroundColor: COLORS.secondary,
-        justifyContent: "center",
-        alignItems: "center",
+        height: "100%",
     },
     productImagePlaceholder: {
-        height: 225,
+        height: "100%",
         backgroundColor: COLORS.secondary,
         justifyContent: "center",
         alignItems: "center",
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
     },
     imagePlaceholderText: {
         color: COLORS.white,
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "500",
+        marginTop: 10,
     },
-    stockIndicator: {
+    categoryBadge: {
         position: "absolute",
-        bottom: 10,
-        right: 10,
-        backgroundColor: "rgba(0, 0, 0, 0.6)",
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 15,
+        top: 15,
+        right: 15,
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
     },
-    stockText: {
+    categoryText: {
         color: COLORS.white,
         fontSize: 12,
-        fontWeight: "500",
+        fontWeight: "bold",
     },
     productInfoContainer: {
         padding: 20,
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        marginTop: -20,
     },
-    productCategory: {
-        fontSize: 14,
-        color: COLORS.primary,
-        fontWeight: "600",
-        marginBottom: 5,
+    nameAndPriceContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 10,
     },
     productName: {
         fontSize: 22,
         fontWeight: "bold",
         color: COLORS.text,
-        marginBottom: 10,
+        flex: 1,
+        marginRight: 10,
     },
-    priceRatingRow: {
+    productPrice: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: COLORS.primary,
+    },
+    dateContainer: {
         flexDirection: "row",
-        justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 15,
     },
-    productPrice: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: COLORS.accent,
-    },
-    ratingContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    ratingText: {
+    dateText: {
+        fontSize: 14,
+        color: COLORS.textLight,
         marginLeft: 5,
-        fontSize: 14,
-        color: COLORS.textLight,
     },
-    sellerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 20,
-        paddingBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.lightGray,
-    },
-    sellerLabel: {
-        fontSize: 14,
-        color: COLORS.textLight,
-        marginRight: 5,
-    },
-    sellerInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    sellerName: {
-        fontSize: 14,
-        fontWeight: "500",
-        color: COLORS.text,
-        marginRight: 8,
-    },
-    verifiedBadge: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.primary,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 10,
-    },
-    verifiedText: {
-        fontSize: 10,
-        color: COLORS.white,
-        marginLeft: 2,
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.lightGray,
+        marginVertical: 15,
     },
     sectionContainer: {
-        marginBottom: 20,
+        marginBottom: 5,
     },
     sectionTitle: {
         fontSize: 18,
@@ -365,43 +287,47 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     descriptionText: {
-        fontSize: 14,
+        fontSize: 15,
         lineHeight: 22,
         color: COLORS.textLight,
-    },
-    featureItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 8,
-    },
-    featureText: {
-        fontSize: 14,
-        color: COLORS.text,
-        marginLeft: 10,
     },
     specificationItem: {
         flexDirection: "row",
         marginBottom: 8,
     },
     specificationKey: {
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: "500",
         color: COLORS.text,
         width: "40%",
     },
     specificationValue: {
-        fontSize: 14,
+        fontSize: 15,
         color: COLORS.textLight,
         width: "60%",
+    },
+    noDataText: {
+        fontSize: 15,
+        color: COLORS.gray,
+        fontStyle: "italic",
+    },
+    orderInfoItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+    orderInfoText: {
+        fontSize: 15,
+        color: COLORS.text,
+        marginLeft: 10,
     },
     footer: {
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 20,
         paddingVertical: 15,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.lightGray,
         backgroundColor: COLORS.white,
+        elevation: 10,
     },
     quantitySelector: {
         flexDirection: "row",
@@ -431,6 +357,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         paddingVertical: 12,
         borderRadius: 8,
+        elevation: 2,
     },
     addToCartText: {
         fontSize: 16,
