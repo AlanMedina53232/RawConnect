@@ -1,23 +1,58 @@
 "use client"
 
 import { useNavigation } from "@react-navigation/native"
+import { LinearGradient } from "expo-linear-gradient"
 import { addDoc, collection } from "firebase/firestore"
 import { useState } from "react"
 import { Alert, ScrollView, StyleSheet, View } from "react-native"
+import {
+    Button,
+    Card,
+    Chip,
+    Divider,
+    HelperText,
+    IconButton,
+    Menu,
+    Text,
+    TextInput,
+    useTheme,
+} from "react-native-paper"
 import ImageUploader from "../../components/ImageUploader"
-import { Button, HelperText, IconButton, Menu, Text, TextInput, useTheme } from "react-native-paper"
 import { db } from "../../firebase/config"
 
 const categories = ["Forestal", "Chemical", "Mineral", "Agricultural"]
+
+const unitMeasures = [
+    { label: "Units (ud)", value: "ud", category: "Quantity" },
+    { label: "Box (box)", value: "box", category: "Quantity" },
+    { label: "Pack (pack)", value: "pack", category: "Quantity" },
+    { label: "Kilograms (kg)", value: "kg", category: "Weight" },
+    { label: "Grams (g)", value: "g", category: "Weight" },
+    { label: "Tons (t)", value: "t", category: "Weight" },
+    { label: "Liters (L)", value: "L", category: "Volume" },
+    { label: "Milliliters (ml)", value: "ml", category: "Volume" },
+    { label: "Cubic meters (m³)", value: "m³", category: "Volume" },
+    { label: "Meters (m)", value: "m", category: "Length" },
+    { label: "Centimeters (cm)", value: "cm", category: "Length" },
+    { label: "Millimeters (mm)", value: "mm", category: "Length" },
+    { label: "Inches (in)", value: "in", category: "Length" },
+    { label: "Feet (ft)", value: "ft", category: "Length" },
+    { label: "Pallets", value: "pallets", category: "Industry" },
+    { label: "Containers", value: "containers", category: "Industry" },
+    { label: "Rolls", value: "rolls", category: "Industry" },
+    { label: "Barrels", value: "barrels", category: "Industry" },
+]
 
 const AddProductScreen = () => {
     const theme = useTheme()
     const navigation = useNavigation()
     const [loading, setLoading] = useState(false)
-    const [menuVisible, setMenuVisible] = useState(false)
+    const [categoryMenuVisible, setCategoryMenuVisible] = useState(false)
+    const [unitMenuVisible, setUnitMenuVisible] = useState(false)
+    const [quantityError, setQuantityError] = useState("")
 
     const [product, setProduct] = useState({
-        imageUrl: "", 
+        imageUrl: "",
         name: "",
         category: "",
         description: "",
@@ -25,18 +60,46 @@ const AddProductScreen = () => {
         price: "",
         minimumOrder: "",
         deliveryOptions: "",
+        unitMeasure: "",
+        quantity: "",
     })
 
     const updateProduct = (field, value) => {
+        // Clear quantity error when updating quantity
+        if (field === "quantity") {
+            setQuantityError("")
+
+            // Validate quantity is a positive number
+            const numValue = Number.parseFloat(value)
+            if (value && (isNaN(numValue) || numValue <= 0)) {
+                setQuantityError("Quantity must be a positive number")
+            }
+        }
+
         setProduct({ ...product, [field]: value })
     }
 
     const validateForm = () => {
+        let isValid = true
+
         if (!product.name || !product.category || !product.price) {
             Alert.alert("Validation Error", "Name, category and price are required fields")
-            return false
+            isValid = false
         }
-        return true
+
+        if (!product.unitMeasure) {
+            Alert.alert("Validation Error", "Please select a unit of measure")
+            isValid = false
+        }
+
+        // Validate quantity
+        const quantity = Number.parseFloat(product.quantity)
+        if (!product.quantity || isNaN(quantity) || quantity <= 0) {
+            setQuantityError("Please enter a valid quantity greater than 0")
+            isValid = false
+        }
+
+        return isValid
     }
 
     const handleSubmit = async () => {
@@ -45,15 +108,14 @@ const AddProductScreen = () => {
         try {
             setLoading(true)
 
-
             const productData = {
                 ...product,
                 price: Number.parseFloat(product.price),
                 minimumOrder: Number.parseInt(product.minimumOrder, 10) || 1,
+                quantity: Number.parseFloat(product.quantity),
                 createdAt: new Date(),
-                imageUrl: product.imageUrl, 
+                imageUrl: product.imageUrl,
             }
-
 
             await addDoc(collection(db, "products"), productData)
 
@@ -66,123 +128,233 @@ const AddProductScreen = () => {
         }
     }
 
+    // Group unit measures by category for the menu
+    const groupedUnitMeasures = unitMeasures.reduce((acc, unit) => {
+        if (!acc[unit.category]) {
+            acc[unit.category] = []
+        }
+        acc[unit.category].push(unit)
+        return acc
+    }, {})
+
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <IconButton icon="arrow-left" iconColor="#FFFFFF" size={24} onPress={() => navigation.goBack()} />
+            <LinearGradient colors={["#6bb2db", "#4a90c0"]} style={styles.header}>
+                <IconButton
+                    icon="arrow-left"
+                    iconColor="#FFFFFF"
+                    size={24}
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                />
                 <Text style={styles.title}>Add New Product</Text>
-            </View>
+            </LinearGradient>
 
             <ScrollView style={styles.form}>
-                <TextInput
-                    label="Product Name"
-                    value={product.name}
-                    onChangeText={(text) => updateProduct("name", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                />
+                <Card style={styles.imageCard}>
+                    <Card.Content style={styles.imageCardContent}>
+                        <Text style={styles.sectionTitle}>Product Image</Text>
+                        <ImageUploader uploadPreset="rawcn_products" onUploadComplete={(url) => updateProduct("imageUrl", url)} />
+                    </Card.Content>
+                </Card>
 
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        label="Category"
-                        value={product.category}
-                        onChangeText={(text) => updateProduct("category", text)}
-                        mode="outlined"
-                        style={styles.input}
-                        outlineColor="#0D47A1"
-                        activeOutlineColor="#1565C0"
-                        right={<TextInput.Icon icon="menu-down" onPress={() => setMenuVisible(true)} />}
-                    />
-                    <Menu
-                        visible={menuVisible}
-                        onDismiss={() => setMenuVisible(false)}
-                        anchor={{ x: 0, y: 0 }}
-                        style={styles.menu}
-                    >
-                        {categories.map((category) => (
-                            <Menu.Item
-                                key={category}
-                                onPress={() => {
-                                    updateProduct("category", category)
-                                    setMenuVisible(false)
-                                }}
-                                title={category}
+                <Text style={styles.sectionTitle}>Basic Information</Text>
+                <Card style={styles.card}>
+                    <Card.Content>
+                        <TextInput
+                            label="Product Name"
+                            value={product.name}
+                            onChangeText={(text) => updateProduct("name", text)}
+                            mode="outlined"
+                            style={styles.input}
+                            outlineColor="#4a90c0"
+                            activeOutlineColor="#6bb2db"
+                            left={<TextInput.Icon icon="tag" />}
+                        />
+
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                label="Category"
+                                value={product.category}
+                                onChangeText={(text) => updateProduct("category", text)}
+                                mode="outlined"
+                                style={styles.input}
+                                outlineColor="#4a90c0"
+                                activeOutlineColor="#6bb2db"
+                                left={<TextInput.Icon icon="shape" />}
+                                right={<TextInput.Icon icon="menu-down" onPress={() => setCategoryMenuVisible(true)} />}
                             />
-                        ))}
-                    </Menu>
-                    <HelperText type="info">Choose from: Forestal, Chemical, Mineral, Agricultural</HelperText>
-                </View>
+                            <Menu
+                                visible={categoryMenuVisible}
+                                onDismiss={() => setCategoryMenuVisible(false)}
+                                anchor={{ x: 0, y: 0 }}
+                                style={styles.menu}
+                            >
+                                {categories.map((category) => (
+                                    <Menu.Item
+                                        key={category}
+                                        onPress={() => {
+                                            updateProduct("category", category)
+                                            setCategoryMenuVisible(false)
+                                        }}
+                                        title={category}
+                                    />
+                                ))}
+                            </Menu>
+                            <View style={styles.chipContainer}>
+                                {categories.map((category) => (
+                                    <Chip
+                                        key={category}
+                                        selected={product.category === category}
+                                        onPress={() => updateProduct("category", category)}
+                                        style={[styles.chip, product.category === category && { backgroundColor: "#d6eaf8" }]}
+                                        textStyle={product.category === category ? { color: "#4a90c0" } : {}}
+                                    >
+                                        {category}
+                                    </Chip>
+                                ))}
+                            </View>
+                        </View>
 
-                <TextInput
-                    label="Description"
-                    value={product.description}
-                    onChangeText={(text) => updateProduct("description", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                    multiline
-                    numberOfLines={3}
-                />
+                        <TextInput
+                            label="Description"
+                            value={product.description}
+                            onChangeText={(text) => updateProduct("description", text)}
+                            mode="outlined"
+                            style={styles.input}
+                            outlineColor="#4a90c0"
+                            activeOutlineColor="#6bb2db"
+                            multiline
+                            numberOfLines={3}
+                            left={<TextInput.Icon icon="text" />}
+                        />
+                    </Card.Content>
+                </Card>
 
-                <TextInput
-                    label="Specifications"
-                    value={product.specifications}
-                    onChangeText={(text) => updateProduct("specifications", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                    multiline
-                    numberOfLines={3}
-                />
+                <Text style={styles.sectionTitle}>Product Details</Text>
+                <Card style={styles.card}>
+                    <Card.Content>
+                        <TextInput
+                            label="Specifications"
+                            value={product.specifications}
+                            onChangeText={(text) => updateProduct("specifications", text)}
+                            mode="outlined"
+                            style={styles.input}
+                            outlineColor="#4a90c0"
+                            activeOutlineColor="#6bb2db"
+                            multiline
+                            numberOfLines={3}
+                            left={<TextInput.Icon icon="clipboard-list" />}
+                        />
 
-                <TextInput
-                    label="Price"
-                    value={product.price}
-                    onChangeText={(text) => updateProduct("price", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                    keyboardType="numeric"
-                />
+                        <View style={styles.row}>
+                            <TextInput
+                                label="Price"
+                                value={product.price}
+                                onChangeText={(text) => updateProduct("price", text)}
+                                mode="outlined"
+                                style={[styles.input, styles.halfInput]}
+                                outlineColor="#4a90c0"
+                                activeOutlineColor="#6bb2db"
+                                keyboardType="numeric"
+                                left={<TextInput.Icon icon="currency-usd" />}
+                            />
 
-                <TextInput
-                    label="Minimum Order Quantity"
-                    value={product.minimumOrder}
-                    onChangeText={(text) => updateProduct("minimumOrder", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                    keyboardType="numeric"
-                />
+                            <TextInput
+                                label="Minimum Order"
+                                value={product.minimumOrder}
+                                onChangeText={(text) => updateProduct("minimumOrder", text)}
+                                mode="outlined"
+                                style={[styles.input, styles.halfInput]}
+                                outlineColor="#4a90c0"
+                                activeOutlineColor="#6bb2db"
+                                keyboardType="numeric"
+                                left={<TextInput.Icon icon="package-variant" />}
+                            />
+                        </View>
 
-                <TextInput
-                    label="Delivery Options"
-                    value={product.deliveryOptions}
-                    onChangeText={(text) => updateProduct("deliveryOptions", text)}
-                    mode="outlined"
-                    style={styles.input}
-                    outlineColor="#0D47A1"
-                    activeOutlineColor="#1565C0"
-                    multiline
-                    numberOfLines={2}
-                />
+                        <View style={styles.row}>
+                            <View style={[styles.halfInput, { marginRight: 8 }]}>
+                                <TextInput
+                                    label="Quantity in Stock *"
+                                    value={product.quantity}
+                                    onChangeText={(text) => updateProduct("quantity", text)}
+                                    mode="outlined"
+                                    style={styles.input}
+                                    outlineColor={quantityError ? "#F44336" : "#4a90c0"}
+                                    activeOutlineColor={quantityError ? "#F44336" : "#6bb2db"}
+                                    keyboardType="numeric"
+                                    left={<TextInput.Icon icon="counter" />}
+                                    error={!!quantityError}
+                                />
+                                {quantityError ? <HelperText type="error">{quantityError}</HelperText> : null}
+                            </View>
 
-                <ImageUploader
-                    uploadPreset="rawcn_products" 
-                    onUploadComplete={(url) => updateProduct("imageUrl", url)} 
-                />
+                            <View style={styles.halfInput}>
+                                <TextInput
+                                    label="Unit of Measure *"
+                                    value={
+                                        product.unitMeasure
+                                            ? unitMeasures.find((u) => u.value === product.unitMeasure)?.label || product.unitMeasure
+                                            : ""
+                                    }
+                                    mode="outlined"
+                                    style={styles.input}
+                                    outlineColor="#4a90c0"
+                                    activeOutlineColor="#6bb2db"
+                                    left={<TextInput.Icon icon="scale" />}
+                                    right={<TextInput.Icon icon="menu-down" onPress={() => setUnitMenuVisible(true)} />}
+                                    editable={false}
+                                />
+                                <Menu
+                                    visible={unitMenuVisible}
+                                    onDismiss={() => setUnitMenuVisible(false)}
+                                    anchor={{ x: 0, y: 0 }}
+                                    style={styles.unitMenu}
+                                >
+                                    {Object.entries(groupedUnitMeasures).map(([category, units]) => (
+                                        <View key={category}>
+                                            <Menu.Item title={category} disabled titleStyle={styles.menuCategoryTitle} />
+                                            <Divider />
+                                            {units.map((unit) => (
+                                                <Menu.Item
+                                                    key={unit.value}
+                                                    onPress={() => {
+                                                        updateProduct("unitMeasure", unit.value)
+                                                        setUnitMenuVisible(false)
+                                                    }}
+                                                    title={unit.label}
+                                                />
+                                            ))}
+                                            {category !== Object.keys(groupedUnitMeasures).pop() && <Divider bold />}
+                                        </View>
+                                    ))}
+                                </Menu>
+                            </View>
+                        </View>
+
+                        <TextInput
+                            label="Delivery Options"
+                            value={product.deliveryOptions}
+                            onChangeText={(text) => updateProduct("deliveryOptions", text)}
+                            mode="outlined"
+                            style={styles.input}
+                            outlineColor="#4a90c0"
+                            activeOutlineColor="#6bb2db"
+                            multiline
+                            numberOfLines={2}
+                            left={<TextInput.Icon icon="truck" />}
+                        />
+                    </Card.Content>
+                </Card>
+
                 <Button
                     mode="contained"
                     onPress={handleSubmit}
                     style={styles.submitButton}
                     loading={loading}
                     disabled={loading}
+                    icon="check"
                 >
                     Add Product
                 </Button>
@@ -194,12 +366,19 @@ const AddProductScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#263238",
+        backgroundColor: "#F5F5F5",
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         padding: 20,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        elevation: 4,
+    },
+    backButton: {
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+        margin: 0,
     },
     title: {
         fontSize: 24,
@@ -209,27 +388,76 @@ const styles = StyleSheet.create({
     },
     form: {
         flex: 1,
+        padding: 16,
+    },
+    card: {
+        marginBottom: 16,
+        borderRadius: 12,
+        elevation: 2,
         backgroundColor: "#FFFFFF",
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
-        padding: 20,
+    },
+    imageCard: {
+        marginBottom: 16,
+        borderRadius: 12,
+        elevation: 2,
+        backgroundColor: "#FFFFFF",
+    },
+    imageCardContent: {
+        alignItems: "center",
+        padding: 16,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#4a90c0",
+        marginTop: 16,
+        marginBottom: 8,
+        marginLeft: 4,
     },
     inputContainer: {
         marginBottom: 15,
     },
     input: {
-        marginBottom: 15,
+        marginBottom: 5,
         backgroundColor: "#FFFFFF",
+    },
+    row: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+    },
+    halfInput: {
+        flex: 1,
     },
     menu: {
         marginTop: 70,
     },
+    unitMenu: {
+        marginTop: 70,
+        width: 250,
+    },
+    menuCategoryTitle: {
+        fontWeight: "bold",
+        color: "#4a90c0",
+    },
+    chipContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginBottom: 10,
+    },
+    chip: {
+        margin: 4,
+        backgroundColor: "#f0f8ff",
+    },
     submitButton: {
         marginTop: 20,
         marginBottom: 40,
-        backgroundColor: "#0D47A1",
+        backgroundColor: "#6bb2db",
         paddingVertical: 8,
+        borderRadius: 12,
+        elevation: 4,
     },
 })
 
 export default AddProductScreen
+
