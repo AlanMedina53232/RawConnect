@@ -1,8 +1,10 @@
 "use client"
 
-import { Ionicons } from "@expo/vector-icons"
-import { useState } from "react"
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
+import { LinearGradient } from "expo-linear-gradient"
+import { useEffect, useState } from "react"
 import {
+    Alert,
     Dimensions,
     Image,
     SafeAreaView,
@@ -13,11 +15,12 @@ import {
     TouchableOpacity,
     View,
 } from "react-native"
+import { Card } from "react-native-paper"
 
 const { width } = Dimensions.get("window")
 
 const COLORS = {
-    primary: "#0D47A1", // Changed to match the producer app theme
+    primary: "#0D47A1",
     secondary: "#1976D2",
     accent: "#2196F3",
     white: "#FFFFFF",
@@ -26,11 +29,50 @@ const COLORS = {
     text: "#263238",
     textLight: "#546E7A",
     background: "#ECEFF1",
+    success: "#4CAF50",
+    warning: "#FFC107",
+    danger: "#F44336",
+}
+
+// Map unit values to readable labels
+const unitLabels = {
+    ud: "Units",
+    box: "Boxes",
+    pack: "Packs",
+    kg: "Kilograms",
+    g: "Grams",
+    t: "Tons",
+    L: "Liters",
+    ml: "Milliliters",
+    "m³": "Cubic meters",
+    m: "Meters",
+    cm: "Centimeters",
+    mm: "Millimeters",
+    in: "Inches",
+    ft: "Feet",
+    pallets: "Pallets",
+    containers: "Containers",
+    rolls: "Rolls",
+    barrels: "Barrels",
 }
 
 export default function ProductDetails({ route, navigation }) {
     const { product } = route.params
     const [quantity, setQuantity] = useState(1)
+    const [stockStatus, setStockStatus] = useState("high") // high, medium, low
+
+    useEffect(() => {
+        // Determine stock status based on available quantity
+        if (product.quantity) {
+            if (product.quantity < 10) {
+                setStockStatus("low")
+            } else if (product.quantity < 50) {
+                setStockStatus("medium")
+            } else {
+                setStockStatus("high")
+            }
+        }
+    }, [product])
 
     // Format the createdAt timestamp
     const formatDate = (timestamp) => {
@@ -66,6 +108,10 @@ export default function ProductDetails({ route, navigation }) {
     }
 
     const incrementQuantity = () => {
+        if (product.quantity && quantity >= product.quantity) {
+            Alert.alert("Maximum Stock", `Only ${product.quantity} ${getUnitLabel()} available.`)
+            return
+        }
         setQuantity(quantity + 1)
     }
 
@@ -76,7 +122,42 @@ export default function ProductDetails({ route, navigation }) {
     }
 
     const addToCart = () => {
-        alert(`Added to cart: ${quantity} units of ${product.name}`)
+        if (product.quantity && quantity > product.quantity) {
+            Alert.alert("Insufficient Stock", `Only ${product.quantity} ${getUnitLabel()} available.`)
+            return
+        }
+        alert(`Added to cart: ${quantity} ${getUnitLabel()} of ${product.name}`)
+    }
+
+    const getUnitLabel = () => {
+        if (!product.unitMeasure) return "units"
+        return unitLabels[product.unitMeasure] || product.unitMeasure
+    }
+
+    const getStockColor = () => {
+        switch (stockStatus) {
+            case "high":
+                return COLORS.success
+            case "medium":
+                return COLORS.warning
+            case "low":
+                return COLORS.danger
+            default:
+                return COLORS.gray
+        }
+    }
+
+    const getStockText = () => {
+        switch (stockStatus) {
+            case "high":
+                return "In Stock"
+            case "medium":
+                return "Limited Stock"
+            case "low":
+                return "Low Stock"
+            default:
+                return "Stock Unknown"
+        }
     }
 
     return (
@@ -88,7 +169,9 @@ export default function ProductDetails({ route, navigation }) {
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Product Details</Text>
-                <View style={{ width: 40 }} /> {/* Empty view for spacing */}
+                <TouchableOpacity style={styles.shareButton}>
+                    <Ionicons name="share-social-outline" size={24} color={COLORS.text} />
+                </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -112,6 +195,30 @@ export default function ProductDetails({ route, navigation }) {
                         <Text style={styles.productName}>{product.name}</Text>
                         <Text style={styles.productPrice}>${product.price}</Text>
                     </View>
+
+                    {/* Stock Status Card */}
+                    <Card style={[styles.stockCard, { borderLeftColor: getStockColor() }]}>
+                        <Card.Content style={styles.stockCardContent}>
+                            <View style={styles.stockInfo}>
+                                <MaterialCommunityIcons
+                                    name={
+                                        stockStatus === "high"
+                                            ? "package-variant-plus"
+                                            : stockStatus === "medium"
+                                                ? "package-variant"
+                                                : "package-variant-minus"
+                                    }
+                                    size={24}
+                                    color={getStockColor()}
+                                />
+                                <View style={styles.stockTextContainer}>
+                                    <Text style={[styles.stockQuantity, { color: getStockColor() }]}>
+                                        {product.quantity ? `${product.quantity} ${getUnitLabel()} available` : "Stock not specified"}
+                                    </Text>
+                                </View>
+                            </View>
+                        </Card.Content>
+                    </Card>
 
                     <View style={styles.dateContainer}>
                         <Ionicons name="calendar-outline" size={16} color={COLORS.textLight} />
@@ -148,28 +255,54 @@ export default function ProductDetails({ route, navigation }) {
                         <View style={styles.orderInfoItem}>
                             <Ionicons name="cube-outline" size={20} color={COLORS.primary} />
                             <Text style={styles.orderInfoText}>
-                                Minimum Order: {product.minimumOrder || 1} {product.minimumOrder > 1 ? "units" : "unit"}
+                                Minimum Order: {product.minimumOrder || 1} {getUnitLabel()}
                             </Text>
                         </View>
+                        {product.unitMeasure && (
+                            <View style={styles.orderInfoItem}>
+                                <MaterialCommunityIcons name="scale" size={20} color={COLORS.primary} />
+                                <Text style={styles.orderInfoText}>Unit of Measure: {getUnitLabel()}</Text>
+                            </View>
+                        )}
+                        {product.deliveryOptions && (
+                            <View style={styles.orderInfoItem}>
+                                <Ionicons name="car-outline" size={20} color={COLORS.primary} />
+                                <Text style={styles.orderInfoText}>Delivery: {product.deliveryOptions}</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
             </ScrollView>
 
-            <View style={styles.footer}>
-                <View style={styles.quantitySelector}>
-                    <TouchableOpacity style={styles.quantityButton} onPress={decrementQuantity} disabled={quantity <= 1}>
-                        <Ionicons name="remove" size={20} color={quantity <= 1 ? COLORS.gray : COLORS.text} />
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{quantity}</Text>
-                    <TouchableOpacity style={styles.quantityButton} onPress={incrementQuantity}>
-                        <Ionicons name="add" size={20} color={COLORS.text} />
+            <LinearGradient colors={["rgba(255,255,255,0.8)", "#FFFFFF"]} style={styles.footerGradient}>
+                <View style={styles.footer}>
+                    <View style={styles.quantitySelector}>
+                        <TouchableOpacity style={styles.quantityButton} onPress={decrementQuantity} disabled={quantity <= 1}>
+                            <Ionicons name="remove" size={20} color={quantity <= 1 ? COLORS.gray : COLORS.text} />
+                        </TouchableOpacity>
+                        <Text style={styles.quantityText}>{quantity}</Text>
+                        <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={incrementQuantity}
+                            disabled={product.quantity && quantity >= product.quantity}
+                        >
+                            <Ionicons
+                                name="add"
+                                size={20}
+                                color={product.quantity && quantity >= product.quantity ? COLORS.gray : COLORS.text}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity
+                        style={[styles.addToCartButton, product.quantity === 0 && styles.disabledButton]}
+                        onPress={addToCart}
+                        disabled={product.quantity === 0}
+                    >
+                        <Ionicons name="cart-outline" size={20} color={COLORS.white} />
+                        <Text style={styles.addToCartText}>{product.quantity === 0 ? "Out of Stock" : "Add to Cart"}</Text>
                     </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.addToCartButton} onPress={addToCart}>
-                    <Ionicons name="cart-outline" size={20} color={COLORS.white} />
-                    <Text style={styles.addToCartText}>Add to Cart</Text>
-                </TouchableOpacity>
-            </View>
+            </LinearGradient>
         </SafeAreaView>
     )
 }
@@ -189,6 +322,14 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: COLORS.lightGray,
+    },
+    shareButton: {
         width: 40,
         height: 40,
         borderRadius: 20,
@@ -248,7 +389,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        marginBottom: 10,
+        marginBottom: 15,
     },
     productName: {
         fontSize: 22,
@@ -261,6 +402,27 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: "bold",
         color: COLORS.primary,
+    },
+    stockCard: {
+        marginBottom: 15,
+        borderRadius: 10,
+        borderLeftWidth: 4,
+        elevation: 1,
+    },
+    stockCardContent: {
+        padding: 10,
+    },
+    stockInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    stockTextContainer: {
+        marginLeft: 10,
+        flex: 1,
+    },
+    stockQuantity: {
+        fontSize: 16,
+        fontWeight: "bold",
     },
     dateContainer: {
         flexDirection: "row",
@@ -314,12 +476,15 @@ const styles = StyleSheet.create({
     orderInfoItem: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 8,
+        marginBottom: 12,
     },
     orderInfoText: {
         fontSize: 15,
         color: COLORS.text,
         marginLeft: 10,
+    },
+    footerGradient: {
+        paddingTop: 10,
     },
     footer: {
         flexDirection: "row",
@@ -327,7 +492,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 15,
         backgroundColor: COLORS.white,
-        elevation: 10,
     },
     quantitySelector: {
         flexDirection: "row",
@@ -358,6 +522,9 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 8,
         elevation: 2,
+    },
+    disabledButton: {
+        backgroundColor: COLORS.gray,
     },
     addToCartText: {
         fontSize: 16,
