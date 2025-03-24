@@ -14,6 +14,7 @@ import {
     Text,
     TouchableOpacity,
     View,
+    TextInput
 } from "react-native"
 
 import { db } from "../../config/fb"
@@ -33,7 +34,9 @@ const COLORS = {
 
 export default function Agricultural({ navigation, route }) {
     const [products, setProducts] = useState([])
+    const [filteredProducts, setFilteredProducts] = useState([]) // Estado para productos filtrados
     const [loading, setLoading] = useState(true)
+    const [searchText, setSearchText] = useState("") // Estado para el texto de búsqueda
 
     // Get the initialCategory from route params or default to "Agricultural"
     const initialCategory = route.params?.initialCategory || "Agricultural"
@@ -51,6 +54,19 @@ export default function Agricultural({ navigation, route }) {
     useEffect(() => {
         fetchProducts(selectedCategory)
     }, [selectedCategory])
+
+    useEffect(() => {
+        if (searchText.trim() === "") {
+            setFilteredProducts(products) // Si no hay texto de búsqueda, mostrar todos los productos
+        } else {
+            const lowercasedSearchText = searchText.toLowerCase()
+            const filtered = products.filter((product) =>
+                product.name.toLowerCase().includes(lowercasedSearchText) ||
+                product.category.toLowerCase().includes(lowercasedSearchText)
+            )
+            setFilteredProducts(filtered)
+        }
+    }, [searchText, products]) // Re-filtrar cada vez que cambia el texto de búsqueda o los productos
 
     const fetchProducts = async (category) => {
         try {
@@ -82,6 +98,7 @@ export default function Agricultural({ navigation, route }) {
             console.log("Products retrieved:", productsList)
 
             setProducts(productsList)
+            setFilteredProducts(productsList) // Inicialmente, no hay filtro, así que mostramos todos los productos
         } catch (error) {
             console.error("Error fetching products:", error)
         } finally {
@@ -135,9 +152,16 @@ export default function Agricultural({ navigation, route }) {
                     <Text style={styles.headerTitle}>Marketplace</Text>
                     <Text style={styles.headerSubtitle}>Find the best business products</Text>
                 </View>
-                <TouchableOpacity style={styles.searchButton}>
-                    <Ionicons name="search-outline" size={24} color={COLORS.text} />
-                </TouchableOpacity>
+            </View>
+
+            {/* Campo de búsqueda */}
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search products"
+                    value={searchText}
+                    onChangeText={setSearchText} // Actualiza el texto de búsqueda
+                />
             </View>
 
             <View style={styles.categoriesContainer}>
@@ -169,7 +193,7 @@ export default function Agricultural({ navigation, route }) {
                 </View>
             ) : (
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.productsContainer}>
-                    {products.length > 0 ? (
+                    {filteredProducts.length > 0 ? (
                         <>
                             <View style={styles.featuredContainer}>
                                 <Text style={styles.sectionTitle}>Featured Products</Text>
@@ -178,7 +202,7 @@ export default function Agricultural({ navigation, route }) {
                                     showsHorizontalScrollIndicator={false}
                                     contentContainerStyle={styles.featuredScrollView}
                                 >
-                                    {products.slice(0, Math.min(3, products.length)).map((product) => (
+                                    {filteredProducts.slice(0, Math.min(3, filteredProducts.length)).map((product) => (
                                         <TouchableOpacity
                                             key={product.id}
                                             style={styles.featuredProductCard}
@@ -209,7 +233,7 @@ export default function Agricultural({ navigation, route }) {
                                     {selectedCategory === "All" ? "All Products" : `${selectedCategory} Products`}
                                 </Text>
                                 <View style={styles.productsGrid}>
-                                    {products.map((product) => (
+                                    {filteredProducts.map((product) => (
                                         <TouchableOpacity
                                             key={product.id}
                                             style={styles.productCard}
@@ -270,12 +294,14 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 24,
+        marginRight: '30%',
         fontWeight: "bold",
         color: COLORS.text,
         textAlign: "center",
     },
     headerSubtitle: {
         fontSize: 14,
+        marginRight: '30%',
         color: COLORS.textLight,
         marginTop: 2,
         textAlign: "center",
@@ -287,6 +313,19 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.lightGray,
         justifyContent: "center",
         alignItems: "center",
+    },
+    searchContainer: {
+        paddingHorizontal: 20,
+        marginVertical: 10,
+    },
+    searchInput: {
+        height: 40,
+        borderColor: COLORS.gray,
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        fontSize: 16,
+        color: COLORS.text,
     },
     categoriesContainer: {
         paddingVertical: 10,
@@ -444,4 +483,3 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
 })
-

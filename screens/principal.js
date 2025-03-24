@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import { View, Text, StyleSheet} from 'react-native';
 import { NativeBaseProvider, Box } from 'native-base';
 import Footer from '../components/Footer';
 
@@ -50,4 +50,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Principal;
+export default Principal;  // Export the component

@@ -2,10 +2,16 @@
 import { useNavigation } from "@react-navigation/native"
 import { StyleSheet, View } from "react-native"
 import { Card, IconButton, Text, useTheme } from "react-native-paper"
+import { useState } from "react"
+
 
 const ProductManagementScreen = () => {
     const theme = useTheme()
     const navigation = useNavigation()
+    const [userData, setUserData] = useState()
+
+
+    
 
     return (
         <View style={styles.container}>
@@ -15,7 +21,7 @@ const ProductManagementScreen = () => {
             </View>
 
             <View style={styles.actionCards}>
-                <Card style={styles.card} onPress={() => navigation.navigate("AddProduct")}>
+                <Card style={styles.card} onPress={() => navigation.navigate("AddProduct", {userData}, console.log(userData)) }>
                     <Card.Content style={styles.cardContent}>
                         <IconButton icon="plus-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Add Product</Text>
