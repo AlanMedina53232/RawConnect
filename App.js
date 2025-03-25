@@ -11,6 +11,7 @@ import MainProducer from "./Producer/MainProducer"
 import Login from "./screens/login"
 import Principal from "./screens/principal"
 import Register from "./screens/register"
+import MyProducts from "./Producer/Components/MyProducts"
 
 // Import the new producer screens
 import AddProductScreen from "./Producer/Components/add-product-screen"
@@ -111,6 +112,14 @@ function App() {
             options={{
               headerShown: false,
               title: "My Orders",
+            }}
+          />
+          <Stack.Screen
+            name="MyProducts"
+            component={MyOrdersScreen}
+            options={{
+              headerShown: false,
+              title: "My Products",
             }}
           />
         </Stack.Navigator>

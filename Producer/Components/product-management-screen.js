@@ -1,5 +1,5 @@
 "use client"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute} from "@react-navigation/native"
 import { StyleSheet, View } from "react-native"
 import { Card, IconButton, Text, useTheme } from "react-native-paper"
 import { useState } from "react"
@@ -8,8 +8,9 @@ import { useState } from "react"
 const ProductManagementScreen = () => {
     const theme = useTheme()
     const navigation = useNavigation()
-    const [userData, setUserData] = useState()
 
+        const route = useRoute();
+        const { userData } = route.params;
 
     
 
@@ -29,7 +30,7 @@ const ProductManagementScreen = () => {
                     </Card.Content>
                 </Card>
 
-                <Card style={styles.card} onPress={() => navigation.navigate("EditProduct")}>
+                <Card style={styles.card} onPress={() => navigation.navigate("MyProducts")}>
                     <Card.Content style={styles.cardContent}>
                         <IconButton icon="pencil-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Edit Product</Text>

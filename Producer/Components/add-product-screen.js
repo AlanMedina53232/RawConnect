@@ -1,6 +1,6 @@
 "use client"
 
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import { LinearGradient } from "expo-linear-gradient"
 import { addDoc, collection } from "firebase/firestore"
 import { useState } from "react"
@@ -44,6 +44,8 @@ const unitMeasures = [
 ]
 
 const AddProductScreen = () => {
+    const route = useRoute();
+    const { userData } = route.params;
     const theme = useTheme()
     const navigation = useNavigation()
     const [loading, setLoading] = useState(false)
@@ -104,10 +106,15 @@ const AddProductScreen = () => {
 
     const handleSubmit = async () => {
         if (!validateForm()) return
-
+   
+        if (!userData.email) {
+            Alert.alert("Error", "Vendedor no tiene un correo electrónico asociado.")
+            return
+        }
+   
         try {
             setLoading(true)
-
+   
             const productData = {
                 ...product,
                 price: Number.parseFloat(product.price),
@@ -115,10 +122,11 @@ const AddProductScreen = () => {
                 quantity: Number.parseFloat(product.quantity),
                 createdAt: new Date(),
                 imageUrl: product.imageUrl,
+                vendor: userData.email,
             }
-
+   
             await addDoc(collection(db, "products"), productData)
-
+   
             Alert.alert("Success", "Product added successfully", [{ text: "OK", onPress: () => navigation.goBack() }])
         } catch (error) {
             console.error("Error adding product:", error)
@@ -127,6 +135,7 @@ const AddProductScreen = () => {
             setLoading(false)
         }
     }
+   
 
     // Group unit measures by category for the menu
     const groupedUnitMeasures = unitMeasures.reduce((acc, unit) => {
