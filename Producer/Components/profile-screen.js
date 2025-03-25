@@ -1,16 +1,20 @@
-"use client"
-
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Avatar, Button, Divider, Text, TextInput, useTheme } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { MaskedTextInput } from "react-native-mask-text"
-import { auth, db, doc, getDoc, setDoc, updateDoc, signOut } from "../../config/fb.js";
+import { MaskedTextInput } from "react-native-mask-text";
+import ImageUploader from "../../components/ImageUploader.js";
+import { auth, db } from "../../config/fb.js";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 
 const ProfileScreen = ({ route, navigation }) => {
   const theme = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showUploader, setShowUploader] = useState(false);
   const [userData, setUserData] = useState({
     fullName: "",
     email: "",
@@ -19,15 +23,14 @@ const ProfileScreen = ({ route, navigation }) => {
     companyName: "",
     industryType: "",
     companyDescription: "",
+    profileImage: "",
   });
 
   useEffect(() => {
-   
     if (route.params?.userData) {
       setUserData(route.params.userData);
       setLoading(false);
     } else {
-     
       const fetchUserData = async () => {
         try {
           if (auth && auth.currentUser) {
@@ -41,7 +44,6 @@ const ProfileScreen = ({ route, navigation }) => {
                 ...userDoc.data(),
               });
             } else {
-              
               const defaultUserData = {
                 email: currentUser.email,
                 fullName: currentUser.displayName || "",
@@ -50,11 +52,11 @@ const ProfileScreen = ({ route, navigation }) => {
                 companyName: "",
                 industryType: "",
                 companyDescription: "",
+                profileImage: "",
               };
 
               setUserData(defaultUserData);
 
-              
               try {
                 await setDoc(userDocRef, {
                   ...defaultUserData,
@@ -65,7 +67,6 @@ const ProfileScreen = ({ route, navigation }) => {
               }
             }
           } else {
-            
             Alert.alert("Not Logged In", "You need to be logged in to view your profile.", [
               { text: "OK", onPress: () => navigation.navigate("Login") },
             ]);
@@ -80,6 +81,46 @@ const ProfileScreen = ({ route, navigation }) => {
     }
   }, [route.params?.userData, navigation]);
 
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        try {
+          if (auth && auth.currentUser) {
+            const currentUser = auth.currentUser;
+            const userDocRef = doc(db, "users", currentUser.email);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              setUserData({
+                email: currentUser.email,
+                ...userDoc.data(),
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching user data on focus:", error);
+        }
+      };
+
+      fetchUserData();
+    }, [])
+  );
+
+  // Callback llamado cuando ImageUploader finaliza la subida
+  const handleImageUploaded = async (imageUrl) => {
+    setUserData(prev => ({ ...prev, profileImage: imageUrl }));
+    if (auth && auth.currentUser) {
+      const currentUser = auth.currentUser;
+      const userDocRef = doc(db, "users", currentUser.email);
+      try {
+        await updateDoc(userDocRef, { profileImage: imageUrl });
+      } catch (error) {
+        console.error("Error updating profile image:", error);
+        Alert.alert("Error", "No se pudo actualizar la imagen de perfil en la base de datos.");
+      }
+    }
+    setShowUploader(false);
+  };
+
   const handleEdit = () => {
     if (isEditing) {
       handleSave();
@@ -92,9 +133,7 @@ const ProfileScreen = ({ route, navigation }) => {
       if (auth && auth.currentUser) {
         const currentUser = auth.currentUser;
         const userDocRef = doc(db, "users", currentUser.email);
-
         const { email, ...dataToUpdate } = userData;
-
         await updateDoc(userDocRef, dataToUpdate);
         Alert.alert("Success", "Profile updated successfully");
       } else {
@@ -109,7 +148,6 @@ const ProfileScreen = ({ route, navigation }) => {
   };
 
   const handleResetPassword = () => {
-    
     Alert.alert("Reset Password", "Are you sure you want to reset your password?", [
       {
         text: "Cancel",
@@ -118,7 +156,6 @@ const ProfileScreen = ({ route, navigation }) => {
       {
         text: "Yes",
         onPress: () => {
-         
           if (auth && auth.currentUser) {
             auth
               .sendPasswordResetEmail(auth.currentUser.email)
@@ -138,14 +175,13 @@ const ProfileScreen = ({ route, navigation }) => {
   };
 
   const handleSignOut = () => {
-    
     signOut(auth)
       .then(() => {
         Alert.alert("Success", "You have been signed out.");
         navigation.reset({
-            index: 0,
-            routes: [{ name: "Login" }], 
-          });
+          index: 0,
+          routes: [{ name: "Login" }],
+        });
       })
       .catch((error) => {
         console.error("Error signing out: ", error);
@@ -195,22 +231,50 @@ const ProfileScreen = ({ route, navigation }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        {userData?.profileImage ? (
-          <Avatar.Image
-            size={120}
-            source={{ uri: userData.profileImage }}
-          />
+        {isEditing ? (
+          <TouchableOpacity onPress={() => setShowUploader(true)}>
+            {userData?.profileImage ? (
+              <Avatar.Image size={120} source={{ uri: userData.profileImage }} />
+            ) : (
+              <Avatar.Text
+                size={120}
+                label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
+                backgroundColor="#0D47A1"
+              />
+            )}
+          </TouchableOpacity>
         ) : (
-          <Avatar.Text
-            size={120}
-            label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
-            backgroundColor="#0D47A1"
-          />
+          userData?.profileImage ? (
+            <Avatar.Image size={120} source={{ uri: userData.profileImage }} />
+          ) : (
+            <Avatar.Text
+              size={120}
+              label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "P"}
+              backgroundColor="#0D47A1"
+            />
+          )
         )}
         <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
           <Icon name={isEditing ? "check" : "pencil"} size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
+      
+      {/* Modal para el ImageUploader */}
+      <Modal visible={showUploader} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Sube una nueva imagen</Text>
+            <ImageUploader 
+              uploadPreset="rawcn_users"  // Reemplaza con tu preset real
+              onUploadComplete={handleImageUploaded}  // Nota: usamos onUploadComplete según tu componente
+            />
+            <Button onPress={() => setShowUploader(false)} mode="outlined" style={{ marginTop: 10 }}>
+              Cancelar
+            </Button>
+          </View>
+        </View>
+      </Modal>
+      
       <View style={styles.content}>
         {renderField("account", "Full Name", userData.fullName, "fullName")}
         {renderField("email", "Email", userData.email, "email")}
@@ -230,15 +294,9 @@ const ProfileScreen = ({ route, navigation }) => {
           Back to Dashboard
         </Button>
 
-        <Button 
-        icon="logout"
-          mode="contained" 
-          onPress={handleSignOut} 
-          style={styles.signOutButton}
-        >
+        <Button icon="logout" mode="contained" onPress={handleSignOut} style={styles.signOutButton}>
           Sign Out
         </Button>
-
       </View>
     </ScrollView>
   );
@@ -260,10 +318,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
@@ -276,10 +331,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 10,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
@@ -295,10 +347,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
     elevation: 3,
@@ -338,6 +387,23 @@ const styles = StyleSheet.create({
   signOutButton: {
     marginTop: 20,
     backgroundColor: "#D32F2F",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    margin: 20,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
   },
 });
 

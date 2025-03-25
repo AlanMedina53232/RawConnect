@@ -1,30 +1,29 @@
-import { getApps, initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { getAuth, signOut } from "firebase/auth";
 
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
-let app;
-let db;
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
+// Initialize services
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-if (getApps().length === 0) {
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyDJWPeRAqgHqFWKSDxymvQClzMdQ5kGhhU",
-        authDomain: "rawconnect-53d6d.firebaseapp.com",
-        projectId: "rawconnect-53d6d",
-        storageBucket: "rawconnect-53d6d.firebasestorage.app",
-        messagingSenderId: "318383808919",
-        appId: "1:456269115125:web:7c34aebcf76dad6f4c1fbc"
-    };
-
-
-    app = initializeApp(firebaseConfig);
-} else {
-
-    app = getApps()[0];
-}
-
-
-db = getFirestore(app);
-
-export { db };
+// Export the initialized services and functions
+export {
+  db,
+  auth,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  signOut
+};

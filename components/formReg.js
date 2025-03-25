@@ -121,6 +121,12 @@ export default function Reg({ isProducer = false }) {
     <ScrollView>
       <View style={styles.container}>
         <Box width="100%" maxWidth="400px">
+          
+          <ImageUploader
+            uploadPreset="rawcn_users" 
+            onUploadComplete={(url) => updateFormData("profileImage", url)}
+          />
+
           <FormControl isRequired>
             <FormControl.Label>Full Name</FormControl.Label>
             <Input
@@ -201,11 +207,6 @@ export default function Reg({ isProducer = false }) {
               </FormControl>
             </>
           )}
-
-          <ImageUploader
-            uploadPreset="rawcn_users" 
-            onUploadComplete={(url) => updateFormData("profileImage", url)}
-          />
 
           <FormControl isRequired>
             <FormControl.Label>Password</FormControl.Label>

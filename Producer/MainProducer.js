@@ -1,8 +1,9 @@
-import { useNavigation } from "@react-navigation/native"
-import { useEffect, useState } from "react"
+import { useNavigation, useFocusEffect } from "@react-navigation/native"
+import { useEffect, useState, useCallback } from "react"
 import { StyleSheet, View } from "react-native"
 import { Avatar, Button, Card, Text, useTheme } from "react-native-paper"
-import { auth, db, doc, getDoc } from "../config/fb.js"
+import { auth, db } from "../config/fb.js"
+import { doc, getDoc } from "firebase/firestore"
 
 const MainProducer = () => {
   const theme = useTheme()
@@ -10,35 +11,43 @@ const MainProducer = () => {
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const currentUser = auth.currentUser
-        if (currentUser) {
-          const userDocRef = doc(db, "users", currentUser.email)
-          const userDoc = await getDoc(userDocRef)
+  const fetchUserData = async () => {
+    try {
+      const currentUser = auth.currentUser
+      if (currentUser) {
+        const userDocRef = doc(db, "users", currentUser.email)
+        const userDoc = await getDoc(userDocRef)
 
-          if (userDoc.exists()) {
-            setUserData({
-              email: currentUser.email,
-              ...userDoc.data(),
-            })
-          } else {
-            setUserData({
-              email: currentUser.email,
-              fullName: currentUser.displayName || "Producer",
-            })
-          }
+        if (userDoc.exists()) {
+          setUserData({
+            email: currentUser.email,
+            ...userDoc.data(),
+          })
+        } else {
+          setUserData({
+            email: currentUser.email,
+            fullName: currentUser.displayName || "Producer",
+          })
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error)
-      } finally {
-        setLoading(false)
       }
+    } catch (error) {
+      console.error("Error fetching user data:", error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  // Se ejecuta una sola vez al montar el componente
+  useEffect(() => { 
     fetchUserData()
   }, [])
+
+  // Se ejecuta cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserData()
+    }, [])
+  )
 
   return (
     <View style={styles.container}>
@@ -166,4 +175,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 })
+
 export default MainProducer

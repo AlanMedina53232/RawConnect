@@ -37,12 +37,13 @@ const ImageUploader = ({ uploadPreset, onUploadComplete }) => {
         body: formData,
       });
       const data = await response.json();
+      console.log("Cloudinary response:", data);
       setLoading(false);
 
       if (data.secure_url) {
         onUploadComplete(data.secure_url);
       } else {
-        console.error('Failed to upload image.');
+        console.error('Failed to upload image.', data);
       }
     } catch (error) {
       console.error('Error uploading image:', error);
