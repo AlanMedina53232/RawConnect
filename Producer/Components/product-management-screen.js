@@ -30,7 +30,7 @@ const ProductManagementScreen = () => {
                     </Card.Content>
                 </Card>
 
-                <Card style={styles.card} onPress={() => navigation.navigate("MyProducts")}>
+                <Card style={styles.card} onPress={() => navigation.navigate("MyProducts", {userData})}>
                     <Card.Content style={styles.cardContent}>
                         <IconButton icon="pencil-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Edit Product</Text>

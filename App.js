@@ -19,6 +19,7 @@ import MyOrdersScreen from "./Producer/Components/my-orders-screen"
 import ProductManagementScreen from "./Producer/Components/product-management-screen"
 import ProfileScreen from "./Producer/Components/profile-screen"
 import HomeScreen from "./Producer/MainProducer"
+import EditProduct from "./Producer/Components/EditProduct"
 
 
 
@@ -116,10 +117,24 @@ function App() {
           />
           <Stack.Screen
             name="MyProducts"
-            component={MyOrdersScreen}
+            component={MyProducts}
             options={{
-              headerShown: false,
-              title: "My Products",
+              title: "My Products",  // Título personalizado para la pantalla
+              headerStyle: {
+                backgroundColor: "#263238", // Estilo de la barra de navegación (puedes personalizarlo)
+              },
+              headerTintColor: "#fff", // Color del texto en la barra de navegación
+            }}
+          />
+          <Stack.Screen
+            name="EditProduct"
+            component={EditProduct}
+            options={{
+              title: "EditProduct",  // Título personalizado para la pantalla
+              headerStyle: {
+                backgroundColor: "#263238", // Estilo de la barra de navegación (puedes personalizarlo)
+              },
+              headerTintColor: "#fff", // Color del texto en la barra de navegación
             }}
           />
         </Stack.Navigator>
