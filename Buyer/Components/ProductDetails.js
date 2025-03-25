@@ -137,7 +137,7 @@ export default function ProductDetails({ route, navigation }) {
     const getStockColor = () => {
         switch (stockStatus) {
             case "high":
-                return COLORS.success
+                return "#6bb2db" // Changed from COLORS.success to blue
             case "medium":
                 return COLORS.warning
             case "low":
@@ -201,16 +201,12 @@ export default function ProductDetails({ route, navigation }) {
                         <Card.Content style={styles.stockCardContent}>
                             <View style={styles.stockInfo}>
                                 <MaterialCommunityIcons
-                                    name={
-                                        stockStatus === "high"
-                                            ? "package-variant-plus"
-                                            : stockStatus === "medium"
-                                                ? "package-variant"
-                                                : "package-variant-minus"
-                                    }
+                                    name="cart-variant"
                                     size={24}
                                     color={getStockColor()}
                                 />
+
+
                                 <View style={styles.stockTextContainer}>
                                     <Text style={[styles.stockQuantity, { color: getStockColor() }]}>
                                         {product.quantity ? `${product.quantity} ${getUnitLabel()} available` : "Stock not specified"}
@@ -224,6 +220,13 @@ export default function ProductDetails({ route, navigation }) {
                         <Ionicons name="calendar-outline" size={16} color={COLORS.textLight} />
                         <Text style={styles.dateText}>Listed on: {formatDate(product.createdAt)}</Text>
                     </View>
+
+                    {product.vendor && (
+                        <View style={styles.vendorContainer}>
+                            <Ionicons name="person-outline" size={16} color={COLORS.textLight} />
+                            <Text style={styles.vendorText}>Vendor: {product.vendor}</Text>
+                        </View>
+                    )}
 
                     <View style={styles.divider} />
 
@@ -430,6 +433,16 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     dateText: {
+        fontSize: 14,
+        color: COLORS.textLight,
+        marginLeft: 5,
+    },
+    vendorContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 15,
+    },
+    vendorText: {
         fontSize: 14,
         color: COLORS.textLight,
         marginLeft: 5,

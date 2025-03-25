@@ -58,32 +58,32 @@ const HomeScreen = ({ navigation }) => {
     <ScrollView style={styles.container}>
       <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.header}>
         <Text style={styles.headerText}>Marketplace</Text>
-        <Text style={styles.subHeaderText}>¡Descubre productos sin intermediarios!</Text>
+        <Text style={styles.subHeaderText}>Discover products without intermediaries!</Text>
       </GradientBackground>
 
       <View style={styles.categoriesContainer}>
-        <Text style={styles.sectionTitle}>Categorías</Text>
+        <Text style={styles.sectionTitle}>Categories</Text>
         <View style={styles.categoriesGrid}>
           <CategoryCard
-            title="Productos Agrícolas"
+            title="Agricultural Products"
             icon={<MaterialCommunityIcons name="tractor" size={40} color="white" />}
             onPress={() => navigateToCategory("Agricultural")}
             imagePrompt="modern agricultural machinery in a vast golden wheat field at sunset, dramatic lighting"
           />
           <CategoryCard
-            title="Minerales y Metales"
+            title="Minerals and Metals"
             icon={<MaterialCommunityIcons name="mine" size={40} color="white" />}
             onPress={() => navigateToCategory("Mineral")}
             imagePrompt="industrial mining operation with massive machinery and raw minerals, dramatic industrial scene"
           />
           <CategoryCard
-            title="Productos Forestales"
+            title="Forest Products"
             icon={<FontAwesome5 name="tree" size={40} color="white" />}
             onPress={() => navigateToCategory("Forestal")}
             imagePrompt="sustainable forestry operation with lumber mill and forest management, morning mist"
           />
           <CategoryCard
-            title="Químicos y Petroquímicos"
+            title="Chemicals and Petrochemicals"
             icon={<MaterialIcons name="science" size={40} color="white" />}
             onPress={() => navigateToCategory("Chemical")}
             imagePrompt="modern chemical plant with sophisticated equipment and blue lighting, industrial scene"
@@ -92,7 +92,7 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.featuredSection}>
-        <Text style={styles.featuredTitle}>Productos Destacados</Text>
+        <Text style={styles.featuredTitle}>Featured Products</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.featuredScroll}>
           {[1, 2, 3, 4, 5].map((item) => (
             <GradientBackground key={item} colors={["#34495e", "#2c3e50"]} style={styles.featuredItem}>
