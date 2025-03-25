@@ -1,14 +1,16 @@
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation } from "@react-navigation/native";
 import ImageUploader from './ImageUploader';
-import { createUserWithEmailAndPassword } from "firebase/auth"
-import { doc, setDoc } from "firebase/firestore"
-import { Alert, Box, Button, FormControl, Input, Select, Text, TextArea } from "native-base"
-import { useState } from "react"
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native"
-import { auth, db } from "../config/fb.js"
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { Alert, Box, Button, FormControl, Input, Select, Text, TextArea } from "native-base";
+import { useState } from "react";
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { auth, db } from "../config/fb.js";
+import MapModal from "./MapModal.js";
+import reverseGeocode from "./geocode.js";
 
 export default function Reg({ isProducer = false }) {
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -19,70 +21,70 @@ export default function Reg({ isProducer = false }) {
     companyName: "",
     industryType: "Forestal",
     companyDescription: "",
-  })
+  });
 
-  const [image, setImage] = useState(null)
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")
+  const [image, setImage] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isMapVisible, setMapVisible] = useState(false);  // Estado para el mapa
 
   const updateFormData = (field, value) => {
-    setFormData({ ...formData, [field]: value })
-  }
+    setFormData({ ...formData, [field]: value });
+  };
 
   const validateForm = () => {
     if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError("Please complete all required fields.")
-      return false
+      setError("Please complete all required fields.");
+      return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.")
-      return false
+      setError("Passwords do not match.");
+      return false;
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters.")
-      return false
+      setError("Password must be at least 6 characters.");
+      return false;
     }
 
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError("Please enter a valid email address.")
-      return false
+      setError("Please enter a valid email address.");
+      return false;
     }
 
     if (isProducer && !formData.companyName) {
-      setError("Company name is required for producers.")
-      return false
+      setError("Company name is required for producers.");
+      return false;
     }
 
-    return true
-  }
+    return true;
+  };
 
   const handleSubmit = async () => {
-    setError("")
-    setSuccessMessage("")
+    setError("");
+    setSuccessMessage("");
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
-    let imageUrl = null
+    let imageUrl = null;
     if (image) {
-      imageUrl = await uploadImageToCloudinary(image)
+      imageUrl = await uploadImageToCloudinary(image);
       if (!imageUrl) {
-        setError("Image upload failed.")
-        setLoading(false)
-        return
+        setError("Image upload failed.");
+        setLoading(false);
+        return;
       }
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
-
-      const user = userCredential.user
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.email);
       const profileImage = formData.profileImage || null;
@@ -96,26 +98,25 @@ export default function Reg({ isProducer = false }) {
         companyDescription: isProducer ? formData.companyDescription : "",
         profileImage: profileImage,
         createdAt: new Date(),
-      })
+      });
 
-      
-      const roleDocRef = doc(db, "Roles", user.email)
+      const roleDocRef = doc(db, "Roles", user.email);
       await setDoc(roleDocRef, {
         role: isProducer ? 2 : 1,
-      })
+      });
 
-      setSuccessMessage("User successfully registered")
+      setSuccessMessage("User successfully registered");
 
       setTimeout(() => {
-        navigation.navigate("Login")
-      }, 2000)
+        navigation.navigate("Login");
+      }, 2000);
     } catch (error) {
-      console.error("Error during registration:", error)
-      setError("Error registering the user: " + error.message)
+      console.error("Error during registration:", error);
+      setError("Error registering the user: " + error.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <ScrollView>
@@ -164,6 +165,7 @@ export default function Reg({ isProducer = false }) {
               onChangeText={(text) => updateFormData("address", text)}
               style={styles.input}
             />
+            <Button mt={2} onPress={() => setMapVisible(true)}>Select on Map</Button> {/* Botón para abrir el mapa */}
           </FormControl>
 
           {isProducer && (
@@ -240,8 +242,24 @@ export default function Reg({ isProducer = false }) {
           </Button>
         </Box>
       </View>
+
+      {/* Modal del mapa */}
+      <MapModal
+        isVisible={isMapVisible}
+        onClose={() => setMapVisible(false)}
+        onLocationSelect={async (location) => {
+          try {
+            const address = await reverseGeocode(location.latitude, location.longitude);
+            updateFormData("address", address);  // Actualiza el estado con la dirección
+            setMapVisible(false);  // Cierra el mapa
+          } catch (error) {
+            setError("No se pudo obtener la dirección.");
+            setMapVisible(false);  // Cierra el mapa
+          }
+        }}
+      />
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
