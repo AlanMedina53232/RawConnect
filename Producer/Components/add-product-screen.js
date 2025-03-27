@@ -18,7 +18,7 @@ import {
     useTheme,
 } from "react-native-paper"
 import ImageUploader from "../../components/ImageUploader"
-import { db } from "../../config/fb"
+import { db } from "../../firebase/config"
 
 const categories = ["Forestal", "Chemical", "Mineral", "Agricultural"]
 
