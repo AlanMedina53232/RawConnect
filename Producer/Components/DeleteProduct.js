@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons"
-import { collection, getDocs, query, where } from "firebase/firestore"
+import { collection, getDocs, query, where, doc, deleteDoc } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import {
     ActivityIndicator,
@@ -108,6 +108,38 @@ export default function DeleteProduct({ navigation, route }) {
         setRefreshing(false)
     }
 
+    const handleDeleteProduct = async (productId) => {
+        try {
+            setLoading(true)
+            await deleteDoc(doc(db, "products", productId))
+            Alert.alert("Success", "Product deleted successfully")
+            fetchProducts(selectedCategory) // Refresh the list
+        } catch (error) {
+            console.error("Error deleting product:", error)
+            Alert.alert("Error", "Failed to delete product. Please try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const confirmDelete = (product) => {
+        Alert.alert(
+            "Delete Product",
+            `Are you sure you want to delete "${product.name}"?`,
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                { 
+                    text: "Delete", 
+                    style: "destructive",
+                    onPress: () => handleDeleteProduct(product.id)
+                }
+            ]
+        )
+    }
+
     const renderStars = (rating = 0) => {
         const stars = []
         const fullStars = Math.floor(rating)
@@ -129,10 +161,6 @@ export default function DeleteProduct({ navigation, route }) {
                 <Text style={styles.ratingText}>{rating?.toFixed(1)}</Text>
             </View>
         )
-    }
-
-    const navigateToEditProduct = (product) => {
-        navigation.navigate("EditProduct", { product, userData })
     }
 
     useEffect(() => {
@@ -186,7 +214,8 @@ export default function DeleteProduct({ navigation, route }) {
                                     <TouchableOpacity
                                         key={product.id}
                                         style={styles.productCard}
-                                        onPress={() => navigateToEditProduct(product)}
+                                        onPress={() => confirmDelete(product)}
+                                        onLongPress={() => navigation.navigate("EditProduct", { product, userData })}
                                     >
                                         {product?.imageUrl ? (
                                             <Image 
