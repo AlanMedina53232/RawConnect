@@ -1,15 +1,18 @@
+"use client"
+
 import { FontAwesome5, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
 import { createDrawerNavigator } from "@react-navigation/drawer"
 import { LinearGradient } from "expo-linear-gradient"
+import { useEffect, useState } from "react"
 import { Alert, Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native"
-import { Button, Text } from "react-native-paper"
-import { auth, signOut } from "../config/fb.js"
+import { Badge, Button, Text } from "react-native-paper"
+import { auth, collection, db, getDocs, query, signOut, where } from "../config/fb.js"
 
 import Agricultural from "./Components/Agricultural"
-
 import ProductDetails from "./Components/ProductDetails"
-
-import ProfileScreen from "./Components/ProfileScreen"
+import BuyerProfileScreen from "./Components/ProfileScreen.js"
+import CartScreen from "./Components/cart-screen"
+import MyOrdersScreen from "./Components/my-orders-screen"
 
 const { width } = Dimensions.get("window")
 const Drawer = createDrawerNavigator()
@@ -49,59 +52,102 @@ const CategoryCard = ({ title, icon, imagePrompt, onPress }) => (
 )
 
 const HomeScreen = ({ navigation }) => {
+  const [cartItemCount, setCartItemCount] = useState(0)
+
+  useEffect(() => {
+    fetchCartItemCount()
+
+    // Set up a listener for when the screen comes into focus
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchCartItemCount()
+    })
+
+    return unsubscribe
+  }, [navigation])
+
+  const fetchCartItemCount = async () => {
+    try {
+      if (auth.currentUser) {
+        const userEmail = auth.currentUser.email
+        const cartQuery = query(collection(db, "cart"), where("userEmail", "==", userEmail))
+
+        const querySnapshot = await getDocs(cartQuery)
+        setCartItemCount(querySnapshot.size)
+        console.log("Cart count updated:", querySnapshot.size)
+      }
+    } catch (error) {
+      console.error("Error fetching cart count:", error)
+    }
+  }
+
   // Function to navigate to Agricultural with the selected category
   const navigateToCategory = (category) => {
     navigation.navigate("Agricultural", { initialCategory: category })
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.header}>
-        <Text style={styles.headerText}>Marketplace</Text>
-        <Text style={styles.subHeaderText}>Discover products without intermediaries!</Text>
-      </GradientBackground>
+    <View style={styles.container}>
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <MaterialIcons name="menu" size={28} color="#2c3e50" />
+        </TouchableOpacity>
 
-      <View style={styles.categoriesContainer}>
-        <Text style={styles.sectionTitle}>Categories</Text>
-        <View style={styles.categoriesGrid}>
-          <CategoryCard
-            title="Agricultural Products"
-            icon={<MaterialCommunityIcons name="tractor" size={40} color="white" />}
-            onPress={() => navigateToCategory("Agricultural")}
-            imagePrompt="modern agricultural machinery in a vast golden wheat field at sunset, dramatic lighting"
-          />
-          <CategoryCard
-            title="Minerals and Metals"
-            icon={<MaterialCommunityIcons name="mine" size={40} color="white" />}
-            onPress={() => navigateToCategory("Mineral")}
-            imagePrompt="industrial mining operation with massive machinery and raw minerals, dramatic industrial scene"
-          />
-          <CategoryCard
-            title="Forest Products"
-            icon={<FontAwesome5 name="tree" size={40} color="white" />}
-            onPress={() => navigateToCategory("Forestal")}
-            imagePrompt="sustainable forestry operation with lumber mill and forest management, morning mist"
-          />
-          <CategoryCard
-            title="Chemicals and Petrochemicals"
-            icon={<MaterialIcons name="science" size={40} color="white" />}
-            onPress={() => navigateToCategory("Chemical")}
-            imagePrompt="modern chemical plant with sophisticated equipment and blue lighting, industrial scene"
-          />
+        <Text style={styles.topBarTitle}>RawConnect</Text>
+
+        <TouchableOpacity style={styles.cartButton} onPress={() => navigation.navigate("Cart")}>
+          <MaterialIcons name="shopping-cart" size={28} color="#2c3e50" />
+          {cartItemCount > 0 && <Badge style={styles.cartBadge}>{cartItemCount}</Badge>}
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.scrollContainer}>
+        <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.header}>
+          <Text style={styles.headerText}>Marketplace</Text>
+          <Text style={styles.subHeaderText}>Discover products without intermediaries!</Text>
+        </GradientBackground>
+
+        <View style={styles.categoriesContainer}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <View style={styles.categoriesGrid}>
+            <CategoryCard
+              title="Agricultural Products"
+              icon={<MaterialCommunityIcons name="tractor" size={40} color="white" />}
+              onPress={() => navigateToCategory("Agricultural")}
+              imagePrompt="modern agricultural machinery in a vast golden wheat field at sunset, dramatic lighting"
+            />
+            <CategoryCard
+              title="Minerals and Metals"
+              icon={<MaterialCommunityIcons name="mine" size={40} color="white" />}
+              onPress={() => navigateToCategory("Mineral")}
+              imagePrompt="industrial mining operation with massive machinery and raw minerals, dramatic industrial scene"
+            />
+            <CategoryCard
+              title="Forest Products"
+              icon={<FontAwesome5 name="tree" size={40} color="white" />}
+              onPress={() => navigateToCategory("Forestal")}
+              imagePrompt="sustainable forestry operation with lumber mill and forest management, morning mist"
+            />
+            <CategoryCard
+              title="Chemicals and Petrochemicals"
+              icon={<MaterialIcons name="science" size={40} color="white" />}
+              onPress={() => navigateToCategory("Chemical")}
+              imagePrompt="modern chemical plant with sophisticated equipment and blue lighting, industrial scene"
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.featuredSection}>
-        <Text style={styles.featuredTitle}>Featured Products</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.featuredScroll}>
-          {[1, 2, 3, 4, 5].map((item) => (
-            <GradientBackground key={item} colors={["#34495e", "#2c3e50"]} style={styles.featuredItem}>
-              <Text style={styles.featuredItemText}>Producto {item}</Text>
-            </GradientBackground>
-          ))}
-        </ScrollView>
-      </View>
-    </ScrollView>
+        <View style={styles.featuredSection}>
+          <Text style={styles.featuredTitle}>Featured Products</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.featuredScroll}>
+            {[1, 2, 3, 4, 5].map((item) => (
+              <GradientBackground key={item} colors={["#34495e", "#2c3e50"]} style={styles.featuredItem}>
+                <Text style={styles.featuredItemText}>Product {item}</Text>
+              </GradientBackground>
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
   )
 }
 
@@ -120,62 +166,113 @@ const handleSignOut = (navigation) => {
     })
 }
 
-const DrawerContent = (props) => (
-  <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.drawerContent}>
-    <View style={styles.drawerHeader}>
-      <Text style={styles.drawerTitle}>RawConnect</Text>
-    </View>
-    <View style={styles.drawerItems}>
-      <Button
-        icon="home"
-        mode="contained"
-        onPress={() => props.navigation.navigate("Home")}
-        style={styles.drawerButton}
-      >
-        Inicio
-      </Button>
-      <Button
-        icon="account"
-        mode="contained"
-        onPress={() => props.navigation.navigate("Profile")}
-        style={styles.drawerButton}
-      >
-        Perfil
-      </Button>
-      <Button icon="cog" mode="contained" onPress={() => alert("Configuración")} style={styles.drawerButton}>
-        Configuración
-      </Button>
-      <Button
-        icon="logout"
-        mode="contained"
-        onPress={() => handleSignOut(props.navigation)}
-        style={styles.signOutButton}
-      >
-        Sign Out
-      </Button>
-    </View>
-  </GradientBackground>
-)
+const DrawerContent = (props) => {
+  const [cartItemCount, setCartItemCount] = useState(0)
+
+  useEffect(() => {
+    fetchCartItemCount()
+
+    // Añadir un listener para cuando el drawer se abre
+    const unsubscribeFocus = props.navigation.addListener("focus", () => {
+      fetchCartItemCount()
+    })
+
+    return unsubscribeFocus
+  }, [props.navigation])
+
+  const fetchCartItemCount = async () => {
+    try {
+      if (auth.currentUser) {
+        const userEmail = auth.currentUser.email
+        const cartQuery = query(collection(db, "cart"), where("userEmail", "==", userEmail))
+
+        const querySnapshot = await getDocs(cartQuery)
+        setCartItemCount(querySnapshot.size)
+      }
+    } catch (error) {
+      console.error("Error fetching cart count:", error)
+    }
+  }
+
+  // Resto del código...
+
+  return (
+    <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.drawerContent}>
+      <View style={styles.drawerHeader}>
+        <Text style={styles.drawerTitle}>RawConnect</Text>
+      </View>
+      <View style={styles.drawerItems}>
+        <Button
+          icon="home"
+          mode="contained"
+          onPress={() => props.navigation.navigate("Home")}
+          style={styles.drawerButton}
+        >
+          Home
+        </Button>
+        <Button
+          icon="account"
+          mode="contained"
+          onPress={() => props.navigation.navigate("Profile")}
+          style={styles.drawerButton}
+        >
+          Profile
+        </Button>
+        <Button
+          icon="shopping"
+          mode="contained"
+          onPress={() => props.navigation.navigate("Cart")}
+          style={styles.drawerButton}
+        >
+          Cart {cartItemCount > 0 && `(${cartItemCount})`}
+        </Button>
+        <Button
+          icon="package-variant"
+          mode="contained"
+          onPress={() => props.navigation.navigate("MyOrders")}
+          style={styles.drawerButton}
+        >
+          My Orders
+        </Button>
+        <Button icon="cog" mode="contained" onPress={() => alert("Configuración")} style={styles.drawerButton}>
+          Configuración
+        </Button>
+        <Button
+          icon="logout"
+          mode="contained"
+          onPress={() => handleSignOut(props.navigation)}
+          style={styles.signOutButton}
+        >
+          Sign Out
+        </Button>
+      </View>
+    </GradientBackground>
+  )
+}
 
 const MainBuyer = () => {
   return (
     <Drawer.Navigator
       drawerContent={(props) => <DrawerContent {...props} />}
       screenOptions={{
-        headerStyle: {
-          backgroundColor: "#2c3e50",
-        },
-        headerTintColor: "#fff",
-        headerTitleStyle: {
-          fontWeight: "bold",
-        },
+        headerShown: false,
       }}
     >
       <Drawer.Screen name="Home" component={HomeScreen} />
-      <Drawer.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
+      <Drawer.Screen name="Profile" component={BuyerProfileScreen} options={{ title: "Perfil" }} />
       <Drawer.Screen name="Agricultural" component={Agricultural} options={{ title: "Agricultural" }} />
 
-      <Drawer.Screen name="ProductDetails" component={ProductDetails} options={{ title: "ProductDetails" }} />
+      <Drawer.Screen
+        name="ProductDetails"
+        component={ProductDetails}
+        options={{
+          title: "Product Details",
+          // Make sure headerShown is true for this screen
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen name="Cart" component={CartScreen} options={{ title: "Shopping Cart" }} />
+      <Drawer.Screen name="MyOrders" component={MyOrdersScreen} options={{ title: "My Orders" }} />
     </Drawer.Navigator>
   )
 }
@@ -188,6 +285,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ecf0f1",
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    paddingTop: 40,
+    paddingBottom: 10,
+    backgroundColor: "#fff",
+    elevation: 4,
+  },
+  topBarTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2c3e50",
+  },
+  cartButton: {
+    position: "relative",
+  },
+  cartBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "#6bb2db",
+  },
+  scrollContainer: {
+    flex: 1,
   },
   gradientContainer: {
     overflow: "hidden",
@@ -320,4 +444,3 @@ const styles = StyleSheet.create({
 })
 
 export default MainBuyer
-

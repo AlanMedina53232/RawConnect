@@ -5,14 +5,15 @@ import {
     ActivityIndicator,
     Dimensions,
     Image,
+    Platform,
     SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
-    TextInput
 } from "react-native"
 
 import { db } from "../../config/fb"
@@ -20,7 +21,7 @@ import { db } from "../../config/fb"
 const { width } = Dimensions.get("window")
 
 const COLORS = {
-    primary: "#00BCD4",
+    primary: "#2c3e50",
     secondary: "#80DEEA",
     accent: "#0097A7",
     white: "#FFFFFF",
@@ -58,9 +59,10 @@ export default function Agricultural({ navigation, route }) {
             setFilteredProducts(products) // Si no hay texto de búsqueda, mostrar todos los productos
         } else {
             const lowercasedSearchText = searchText.toLowerCase()
-            const filtered = products.filter((product) =>
-                product.name.toLowerCase().includes(lowercasedSearchText) ||
-                product.category.toLowerCase().includes(lowercasedSearchText)
+            const filtered = products.filter(
+                (product) =>
+                    product.name?.toLowerCase().includes(lowercasedSearchText) ||
+                    product.category?.toLowerCase().includes(lowercasedSearchText),
             )
             setFilteredProducts(filtered)
         }
@@ -128,7 +130,10 @@ export default function Agricultural({ navigation, route }) {
     }
 
     const navigateToProductDetails = (product) => {
-        navigation.navigate("ProductDetails", { product })
+        navigation.navigate("ProductDetails", {
+            product,
+            previousScreen: "Agricultural",
+        })
     }
 
     // Update the screen title based on the selected category
@@ -146,10 +151,13 @@ export default function Agricultural({ navigation, route }) {
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
-                <View>
+                <View style={styles.headerTextContainer}>
                     <Text style={styles.headerTitle}>Marketplace</Text>
                     <Text style={styles.headerSubtitle}>Find the best business products</Text>
                 </View>
+                <TouchableOpacity style={styles.searchButton}>
+                    <Ionicons name="search-outline" size={24} color={COLORS.text} />
+                </TouchableOpacity>
             </View>
 
             {/* Campo de búsqueda */}
@@ -272,6 +280,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.white,
+        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     },
     header: {
         flexDirection: "row",
@@ -281,6 +290,10 @@ const styles = StyleSheet.create({
         paddingTop: 15,
         paddingBottom: 10,
         backgroundColor: COLORS.white,
+    },
+    headerTextContainer: {
+        flex: 1,
+        alignItems: "center",
     },
     backButton: {
         width: 40,
@@ -292,14 +305,12 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 24,
-        marginRight: '30%',
         fontWeight: "bold",
         color: COLORS.text,
         textAlign: "center",
     },
     headerSubtitle: {
         fontSize: 14,
-        marginRight: '30%',
         color: COLORS.textLight,
         marginTop: 2,
         textAlign: "center",
@@ -481,3 +492,4 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
 })
+

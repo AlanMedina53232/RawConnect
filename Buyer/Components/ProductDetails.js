@@ -1,12 +1,11 @@
-"use client"
-
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import { useEffect, useState } from "react"
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useState } from "react";
 import {
     Alert,
     Dimensions,
     Image,
+    Platform,
     SafeAreaView,
     ScrollView,
     StatusBar,
@@ -14,13 +13,14 @@ import {
     Text,
     TouchableOpacity,
     View,
-} from "react-native"
-import { Card } from "react-native-paper"
+} from "react-native";
+import { Card } from "react-native-paper";
+import { addDoc, auth, collection, db, doc, getDocs, query, updateDoc, where } from "../../config/fb.js";
 
-const { width } = Dimensions.get("window")
+const { width } = Dimensions.get("window");
 
 const COLORS = {
-    primary: "#0D47A1",
+    primary: "#2c3e50",
     secondary: "#1976D2",
     accent: "#2196F3",
     white: "#FFFFFF",
@@ -32,9 +32,8 @@ const COLORS = {
     success: "#4CAF50",
     warning: "#FFC107",
     danger: "#F44336",
-}
+};
 
-// Map unit values to readable labels
 const unitLabels = {
     ud: "Units",
     box: "Boxes",
@@ -54,98 +53,138 @@ const unitLabels = {
     containers: "Containers",
     rolls: "Rolls",
     barrels: "Barrels",
-}
+};
 
 export default function ProductDetails({ route, navigation }) {
-    const { product } = route.params
-    const [quantity, setQuantity] = useState(1)
-    const [stockStatus, setStockStatus] = useState("high") // high, medium, low
+    const { product } = route.params;
+    const [quantity, setQuantity] = useState(1);
+    const [stockStatus, setStockStatus] = useState("high");
 
     useEffect(() => {
-        // Determine stock status based on available quantity
         if (product.quantity) {
             if (product.quantity < 10) {
-                setStockStatus("low")
+                setStockStatus("low");
             } else if (product.quantity < 50) {
-                setStockStatus("medium")
+                setStockStatus("medium");
             } else {
-                setStockStatus("high")
+                setStockStatus("high");
             }
         }
-    }, [product])
+    }, [product]);
 
-    // Format the createdAt timestamp
     const formatDate = (timestamp) => {
-        if (!timestamp) return "N/A"
-
+        if (!timestamp) return "N/A";
         try {
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
             return date.toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
-            })
+            });
         } catch (error) {
-            console.error("Error formatting date:", error)
-            return "N/A"
+            console.error("Error formatting date:", error);
+            return "N/A";
         }
-    }
+    };
 
-    // Parse specifications if it's a string
     const getSpecifications = () => {
-        if (!product.specifications) return {}
-
+        if (!product.specifications) return {};
         if (typeof product.specifications === "string") {
             try {
-                return JSON.parse(product.specifications)
+                return JSON.parse(product.specifications);
             } catch (e) {
-                // If it's not valid JSON, return it as a single specification
-                return { Details: product.specifications }
+                return { Details: product.specifications };
             }
         }
-
-        return product.specifications
-    }
+        return product.specifications;
+    };
 
     const incrementQuantity = () => {
         if (product.quantity && quantity >= product.quantity) {
-            Alert.alert("Maximum Stock", `Only ${product.quantity} ${getUnitLabel()} available.`)
-            return
+            Alert.alert("Maximum Stock", `Only ${product.quantity} ${getUnitLabel()} available.`);
+            return;
         }
-        setQuantity(quantity + 1)
-    }
+        setQuantity(quantity + 1);
+    };
 
     const decrementQuantity = () => {
         if (quantity > 1) {
-            setQuantity(quantity - 1)
+            setQuantity(quantity - 1);
         }
-    }
+    };
 
-    const addToCart = () => {
-        if (product.quantity && quantity > product.quantity) {
-            Alert.alert("Insufficient Stock", `Only ${product.quantity} ${getUnitLabel()} available.`)
-            return
+    const addToCart = async () => {
+        try {
+            if (!auth.currentUser) {
+                Alert.alert("Please Login", "You need to be logged in to add items to your cart", [
+                    { text: "Login", onPress: () => navigation.navigate("Login") },
+                    { text: "Cancel", style: "cancel" },
+                ]);
+                return;
+            }
+
+            if (product.quantity && quantity > product.quantity) {
+                Alert.alert("Insufficient Stock", `Only ${product.quantity} ${getUnitLabel()} available.`);
+                return;
+            }
+
+            const cartQuery = query(
+                collection(db, "cart"),
+                where("userEmail", "==", auth.currentUser.email),
+                where("productId", "==", product.id)
+            );
+
+            const querySnapshot = await getDocs(cartQuery);
+
+            if (!querySnapshot.empty) {
+                const cartItem = querySnapshot.docs[0];
+                const newQuantity = cartItem.data().quantity + quantity;
+
+                if (newQuantity > product.quantity) {
+                    Alert.alert(
+                        "Insufficient Stock",
+                        `You already have ${cartItem.data().quantity} in your cart. Only ${product.quantity} available.`
+                    );
+                    return;
+                }
+
+                await updateDoc(doc(db, "cart", cartItem.id), {
+                    quantity: newQuantity,
+                });
+
+                Alert.alert("Success", `Updated quantity to ${newQuantity} ${getUnitLabel()}`);
+            } else {
+                await addDoc(collection(db, "cart"), {
+                    userEmail: auth.currentUser.email,
+                    productId: product.id,
+                    productName: product.name,
+                    price: product.price,
+                    quantity: quantity,
+                    unitMeasure: product.unitMeasure || "ud",
+                    imageUrl: product.imageUrl || null,
+                    vendorEmail: product.vendor || "Unknown vendor",
+                    productStock: product.quantity,
+                    addedAt: new Date(),
+                });
+
+                Alert.alert("Success", `Added ${quantity} ${getUnitLabel()} to cart`);
+            }
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            Alert.alert("Error", error.message || "Failed to add item to cart");
         }
-        alert(`Added to cart: ${quantity} ${getUnitLabel()} of ${product.name}`)
-    }
+    };
 
-    const getUnitLabel = () => {
-        if (!product.unitMeasure) return "units"
-        return unitLabels[product.unitMeasure] || product.unitMeasure
-    }
+    const getUnitLabel = () => unitLabels[product.unitMeasure] || product.unitMeasure || "units";
 
     const getStockColor = () => {
         switch (stockStatus) {
-            case "high":
-                return "#6bb2db" // Changed from COLORS.success to blue
-            case "medium":
-                return COLORS.warning
-            case "low":
-                return COLORS.danger
-            default:
-                return COLORS.gray
+            case "high": return "#6bb2db";
+            case "medium": return COLORS.warning;
+            case "low": return COLORS.danger;
+            default: return COLORS.gray;
         }
-    }
+    };
 
     const getStockText = () => {
         switch (stockStatus) {
@@ -165,7 +204,13 @@ export default function ProductDetails({ route, navigation }) {
             <StatusBar backgroundColor={COLORS.white} barStyle="dark-content" />
 
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => {
+                        const previousScreen = route.params?.previousScreen || "Agricultural"
+                        navigation.navigate(previousScreen)
+                    }}
+                >
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Product Details</Text>
@@ -205,7 +250,6 @@ export default function ProductDetails({ route, navigation }) {
                                     size={24}
                                     color={getStockColor()}
                                 />
-
 
                                 <View style={styles.stockTextContainer}>
                                     <Text style={[styles.stockQuantity, { color: getStockColor() }]}>
@@ -314,6 +358,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     },
     header: {
         flexDirection: "row",
@@ -321,6 +366,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 15,
         paddingVertical: 15,
+        paddingTop: Platform.OS === "android" ? 15 : 50, // Add more padding for iOS
         backgroundColor: COLORS.white,
         elevation: 2,
     },
@@ -344,6 +390,8 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
         color: COLORS.text,
+        textAlign: "center",
+        flex: 1, // Allow the title to take up available space
     },
     imageContainer: {
         width: "100%",
@@ -504,6 +552,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 20,
         paddingVertical: 15,
+        paddingBottom: Platform.OS === "ios" ? 30 : 15, // Add extra padding at the bottom for iOS
         backgroundColor: COLORS.white,
     },
     quantitySelector: {

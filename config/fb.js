@@ -1,8 +1,19 @@
-import Constants from "expo-constants";
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut} from "firebase/auth"; 
-import { getFirestore, doc, getDoc, query, where,collection} from 'firebase/firestore';
+import Constants from "expo-constants"
+import { getAnalytics } from "firebase/analytics"
+import { initializeApp } from "firebase/app"
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth"
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    getFirestore,
+    query,
+    updateDoc,
+    where,
+} from "firebase/firestore"
 
 const firebaseConfig = {
     apiKey: Constants.expoConfig.extra.apiKey,
@@ -12,12 +23,29 @@ const firebaseConfig = {
     messagingSenderId: Constants.expoConfig.extra.messagingSenderId,
     appId: Constants.expoConfig.extra.appId,
     databaseURL: Constants.expoConfig.extra.databaseURL,
-};
+}
 
+const app = initializeApp(firebaseConfig)
+const analytics = getAnalytics(app)
+const auth = getAuth(app)
+const db = getFirestore(app)
 
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const auth = getAuth(app);  
-const db = getFirestore(app);
+export {
+    addDoc,
+    analytics,
+    auth,
+    collection,
+    db,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    getFirestore,
+    onAuthStateChanged,
+    query,
+    signInWithEmailAndPassword,
+    signOut,
+    updateDoc,
+    where
+}
 
-export { auth, analytics, signInWithEmailAndPassword, db, doc, getDoc, onAuthStateChanged, signOut, query, where, collection };  
