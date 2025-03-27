@@ -38,7 +38,7 @@ const ProductManagementScreen = () => {
                     </Card.Content>
                 </Card>
 
-                <Card style={styles.card} onPress={() => navigation.navigate("DeleteProduct")}>
+                <Card style={styles.card} onPress={() => navigation.navigate("DeleteProduct", {userData})}>
                     <Card.Content style={styles.cardContent}>
                         <IconButton icon="delete-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Delete Product</Text>

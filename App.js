@@ -20,6 +20,7 @@ import ProductManagementScreen from "./Producer/Components/product-management-sc
 import ProfileScreen from "./Producer/Components/profile-screen"
 import HomeScreen from "./Producer/MainProducer"
 import EditProduct from "./Producer/Components/EditProduct"
+import DeleteProduct from "./Producer/Components/DeleteProduct"
 
 
 
@@ -131,6 +132,17 @@ function App() {
             component={EditProduct}
             options={{
               title: "EditProduct",  // Título personalizado para la pantalla
+              headerStyle: {
+                backgroundColor: "#263238", // Estilo de la barra de navegación (puedes personalizarlo)
+              },
+              headerTintColor: "#fff", // Color del texto en la barra de navegación
+            }}
+          />
+          <Stack.Screen
+            name="DeleteProduct"
+            component={DeleteProduct}
+            options={{
+              title: "DeleteProduct",  // Título personalizado para la pantalla
               headerStyle: {
                 backgroundColor: "#263238", // Estilo de la barra de navegación (puedes personalizarlo)
               },
