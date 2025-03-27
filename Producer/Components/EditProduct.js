@@ -16,8 +16,10 @@ import {
     TextInput,
     useTheme,
 } from "react-native-paper"
+import Ionicons from 'react-native-vector-icons/Ionicons'
 import ImageUploader from "../../components/ImageUploader"
 import { db } from "../../firebase/config"
+
 const COLORS = {
     primary: "#0D47A1",
     secondary: "#1976D2",
@@ -33,9 +35,7 @@ const COLORS = {
     danger: "#F44336",
 }
 
-
 const categories = ["Forestal", "Chemical", "Mineral", "Agricultural"]
-
 
 const unitMeasures = [
     { label: "Units (ud)", value: "ud", category: "Quantity" },
@@ -58,61 +58,82 @@ const unitMeasures = [
     { label: "Barrels", value: "barrels", category: "Industry" },
 ]
 
-
-export default function EditProduct ({ route, navigation }) {
-    const { product } = route.params
-    const { userData } = route.params;
-    console.log("Received product data:", product);
+export default function EditProduct({ route, navigation }) {
+    const { product: initialProduct, userData } = route.params
     const [loading, setLoading] = useState(false)
     const [categoryMenuVisible, setCategoryMenuVisible] = useState(false)
     const [unitMenuVisible, setUnitMenuVisible] = useState(false)
     const [quantityError, setQuantityError] = useState("")
+    const [priceError, setPriceError] = useState("")
+    const [minOrderError, setMinOrderError] = useState("")
 
-    const [productState, setProduct] = useState(product); 
+    // Estado inicial con valores numéricos convertidos a string
+    const [product, setProduct] = useState({
+        ...initialProduct,
+        price: initialProduct.price ? String(initialProduct.price) : "",
+        minimumOrder: initialProduct.minimumOrder ? String(initialProduct.minimumOrder) : "1",
+        quantity: initialProduct.quantity ? String(initialProduct.quantity) : "",
+    })
 
+    console.log("Product state:", product)
 
-    if (!product) {
-        console.error("No se ha recibido un producto.");
-        return null; // O manejar el error de alguna otra manera
-    }
-
-    // Imprimir el producto en consola
-    console.log("Datos recibidos:", product);
-
-
+    // Función para actualizar el producto con validación numérica
     const updateProduct = (field, value) => {
-        // Clear quantity error when updating quantity
-        if (field === "quantity") {
-            setQuantityError("")
+        // Limpiar errores al actualizar
+        if (field === "quantity") setQuantityError("")
+        if (field === "price") setPriceError("")
+        if (field === "minimumOrder") setMinOrderError("")
 
-            // Validate quantity is a positive number
-            const numValue = Number.parseFloat(value)
-            if (value && (isNaN(numValue) || numValue <= 0)) {
-                setQuantityError("Quantity must be a positive number")
+        // Validación especial para campos numéricos
+        if (["price", "minimumOrder", "quantity"].includes(field)) {
+            // Permitir solo números y un punto decimal
+            const cleanedValue = value.replace(/[^0-9.]/g, "")
+            
+            // Validar que sea un número positivo
+            const numValue = parseFloat(cleanedValue)
+            if (cleanedValue && (isNaN(numValue) || numValue <= 0)) {
+                if (field === "quantity") setQuantityError("La cantidad debe ser un número positivo")
+                if (field === "price") setPriceError("El precio debe ser un número positivo")
+                if (field === "minimumOrder") setMinOrderError("El pedido mínimo debe ser un número positivo")
             }
+            
+            setProduct({ ...product, [field]: cleanedValue })
+        } else {
+            setProduct({ ...product, [field]: value })
         }
-        
-
-        setProduct({ ...productState, [field]: value })
     }
 
     const validateForm = () => {
         let isValid = true
 
-        if (!product.name || !product.category || !product.price) {
-            Alert.alert("Validation Error", "Name, category and price are required fields")
+        if (!product.name || !product.category) {
+            Alert.alert("Error de validación", "Nombre y categoría son campos requeridos")
+            isValid = false
+        }
+
+        // Validar precio
+        const price = parseFloat(product.price)
+        if (!product.price || isNaN(price) || price <= 0) {
+            setPriceError("Ingrese un precio válido")
+            isValid = false
+        }
+
+        // Validar cantidad mínima
+        const minOrder = parseInt(product.minimumOrder, 10)
+        if (!product.minimumOrder || isNaN(minOrder) || minOrder <= 0) {
+            setMinOrderError("Ingrese una cantidad mínima válida")
+            isValid = false
+        }
+
+        // Validar cantidad en stock
+        const quantity = parseFloat(product.quantity)
+        if (!product.quantity || isNaN(quantity) || quantity <= 0) {
+            setQuantityError("Ingrese una cantidad válida")
             isValid = false
         }
 
         if (!product.unitMeasure) {
-            Alert.alert("Validation Error", "Please select a unit of measure")
-            isValid = false
-        }
-
-        // Validate quantity
-        const quantity = Number.parseFloat(product.quantity)
-        if (!product.quantity || isNaN(quantity) || quantity <= 0) {
-            setQuantityError("Please enter a valid quantity greater than 0")
+            Alert.alert("Error de validación", "Seleccione una unidad de medida")
             isValid = false
         }
 
@@ -120,42 +141,43 @@ export default function EditProduct ({ route, navigation }) {
     }
 
     const handleSubmit = async () => {
-        console.log("Submitting product data:", product);
         if (!validateForm()) return
-   
-        if (!userData.email) {
+
+        if (!userData?.email) {
             Alert.alert("Error", "Vendedor no tiene un correo electrónico asociado.")
             return
         }
-   
+
         try {
             setLoading(true)
-   
+
             const productData = {
                 ...product,
-                price: Number.parseFloat(product.price),
-                minimumOrder: Number.parseInt(product.minimumOrder, 10) || 1,
-                quantity: Number.parseFloat(product.quantity),
+                name: product.name.trim(),
+                description: product.description?.trim(),
+                specifications: product.specifications?.trim(),
+                price: parseFloat(product.price),
+                minimumOrder: parseInt(product.minimumOrder, 10),
+                quantity: parseFloat(product.quantity),
                 createdAt: new Date(),
-                imageUrl: product.imageUrl,
                 vendor: userData.email,
             }
-   
+
+            console.log("Enviando datos a Firebase:", productData)
             await addDoc(collection(db, "products"), productData)
-   
-            Alert.alert("Success", "Product added successfully", [{ text: "OK", onPress: () => navigation.goBack() }])
+
+            Alert.alert("Éxito", "Producto agregado correctamente", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ])
         } catch (error) {
-            console.error("Error adding product:", error)
-            Alert.alert("Error", "Failed to add product. Please try again.")
+            console.error("Error al agregar producto:", error)
+            Alert.alert("Error", "No se pudo agregar el producto. Intente nuevamente.")
         } finally {
             setLoading(false)
         }
     }
-    
-    
-   
 
-    // Group unit measures by category for the menu
+    // Agrupar unidades de medida por categoría para el menú
     const groupedUnitMeasures = unitMeasures.reduce((acc, unit) => {
         if (!acc[unit.category]) {
             acc[unit.category] = []
@@ -166,34 +188,38 @@ export default function EditProduct ({ route, navigation }) {
 
     return (
         <View style={styles.container}>
-            
-
             <ScrollView style={styles.form}>
                 <Card style={styles.imageCard}>
                     <Card.Content style={styles.imageCardContent}>
                         <View style={styles.imageContainer}>
-                    {product.imageUrl ? (
-                        <Image source={{ uri: product.imageUrl }} style={styles.productImage} resizeMode="cover" />
-                    ) : (
-                        <View style={styles.productImagePlaceholder}>
-                            <Ionicons name="image-outline" size={80} color={COLORS.white} />
-                            <Text style={styles.imagePlaceholderText}>No Image Available</Text>
+                            {product.imageUrl ? (
+                                <Image 
+                                    source={{ uri: product.imageUrl }} 
+                                    style={styles.productImage} 
+                                    resizeMode="cover" 
+                                />
+                            ) : (
+                                <View style={styles.productImagePlaceholder}>
+                                    <Ionicons name="image-outline" size={80} color={COLORS.white} />
+                                    <Text style={styles.imagePlaceholderText}>No hay imagen disponible</Text>
+                                </View>
+                            )}
+                            <View style={styles.categoryBadge}>
+                                <Text style={styles.categoryText}>{product.category}</Text>
+                            </View>
                         </View>
-                    )}
-
-                    <View style={styles.categoryBadge}>
-                        <Text style={styles.categoryText}>{product.category}</Text>
-                    </View>
-                </View>
-                <ImageUploader uploadPreset="rawcn_products" onUploadComplete={(url) => updateProduct("imageUrl", url)} />
+                        <ImageUploader 
+                            uploadPreset="rawcn_products" 
+                            onUploadComplete={(url) => updateProduct("imageUrl", url)} 
+                        />
                     </Card.Content>
                 </Card>
 
-                <Text style={styles.sectionTitle}>Basic Information</Text>
+                <Text style={styles.sectionTitle}>Información Básica</Text>
                 <Card style={styles.card}>
                     <Card.Content>
                         <TextInput
-                            label="Product Name"
+                            label="Nombre del Producto *"
                             value={product.name}
                             onChangeText={(text) => updateProduct("name", text)}
                             mode="outlined"
@@ -205,7 +231,7 @@ export default function EditProduct ({ route, navigation }) {
 
                         <View style={styles.inputContainer}>
                             <TextInput
-                                label="Category"
+                                label="Categoría *"
                                 value={product.category}
                                 onChangeText={(text) => updateProduct("category", text)}
                                 mode="outlined"
@@ -248,7 +274,7 @@ export default function EditProduct ({ route, navigation }) {
                         </View>
 
                         <TextInput
-                            label="Description"
+                            label="Descripción"
                             value={product.description}
                             onChangeText={(text) => updateProduct("description", text)}
                             mode="outlined"
@@ -262,11 +288,11 @@ export default function EditProduct ({ route, navigation }) {
                     </Card.Content>
                 </Card>
 
-                <Text style={styles.sectionTitle}>Product Details</Text>
+                <Text style={styles.sectionTitle}>Detalles del Producto</Text>
                 <Card style={styles.card}>
                     <Card.Content>
                         <TextInput
-                            label="Specifications"
+                            label="Especificaciones"
                             value={product.specifications}
                             onChangeText={(text) => updateProduct("specifications", text)}
                             mode="outlined"
@@ -279,51 +305,59 @@ export default function EditProduct ({ route, navigation }) {
                         />
 
                         <View style={styles.row}>
-                            <TextInput
-                                label="Price"
-                                value={product.price}
-                                onChangeText={(text) => updateProduct("price", text)}
-                                mode="outlined"
-                                style={[styles.input, styles.halfInput]}
-                                outlineColor="#4a90c0"
-                                activeOutlineColor="#6bb2db"
-                                keyboardType="numeric"
-                                left={<TextInput.Icon icon="currency-usd" />}
-                            />
+                            <View style={[styles.halfInput, { marginRight: 8 }]}>
+                                <TextInput
+                                    label="Precio *"
+                                    value={product.price}
+                                    onChangeText={(text) => updateProduct("price", text)}
+                                    mode="outlined"
+                                    style={styles.input}
+                                    outlineColor={priceError ? "#F44336" : "#4a90c0"}
+                                    activeOutlineColor={priceError ? "#F44336" : "#6bb2db"}
+                                    keyboardType="decimal-pad"
+                                    left={<TextInput.Icon icon="currency-usd" />}
+                                    error={!!priceError}
+                                />
+                                {priceError && <HelperText type="error">{priceError}</HelperText>}
+                            </View>
 
-                            <TextInput
-                                label="Minimum Order"
-                                value={product.minimumOrder}
-                                onChangeText={(text) => updateProduct("minimumOrder", text)}
-                                mode="outlined"
-                                style={[styles.input, styles.halfInput]}
-                                outlineColor="#4a90c0"
-                                activeOutlineColor="#6bb2db"
-                                keyboardType="numeric"
-                                left={<TextInput.Icon icon="package-variant" />}
-                            />
+                            <View style={styles.halfInput}>
+                                <TextInput
+                                    label="Pedido Mínimo *"
+                                    value={product.minimumOrder}
+                                    onChangeText={(text) => updateProduct("minimumOrder", text)}
+                                    mode="outlined"
+                                    style={styles.input}
+                                    outlineColor={minOrderError ? "#F44336" : "#4a90c0"}
+                                    activeOutlineColor={minOrderError ? "#F44336" : "#6bb2db"}
+                                    keyboardType="number-pad"
+                                    left={<TextInput.Icon icon="package-variant" />}
+                                    error={!!minOrderError}
+                                />
+                                {minOrderError && <HelperText type="error">{minOrderError}</HelperText>}
+                            </View>
                         </View>
 
                         <View style={styles.row}>
                             <View style={[styles.halfInput, { marginRight: 8 }]}>
                                 <TextInput
-                                    label="Quantity in Stock *"
+                                    label="Cantidad en Stock *"
                                     value={product.quantity}
                                     onChangeText={(text) => updateProduct("quantity", text)}
                                     mode="outlined"
                                     style={styles.input}
                                     outlineColor={quantityError ? "#F44336" : "#4a90c0"}
                                     activeOutlineColor={quantityError ? "#F44336" : "#6bb2db"}
-                                    keyboardType="numeric"
+                                    keyboardType="decimal-pad"
                                     left={<TextInput.Icon icon="counter" />}
                                     error={!!quantityError}
                                 />
-                                {quantityError ? <HelperText type="error">{quantityError}</HelperText> : null}
+                                {quantityError && <HelperText type="error">{quantityError}</HelperText>}
                             </View>
 
                             <View style={styles.halfInput}>
                                 <TextInput
-                                    label="Unit of Measure *"
+                                    label="Unidad de Medida *"
                                     value={
                                         product.unitMeasure
                                             ? unitMeasures.find((u) => u.value === product.unitMeasure)?.label || product.unitMeasure
@@ -335,7 +369,7 @@ export default function EditProduct ({ route, navigation }) {
                                     activeOutlineColor="#6bb2db"
                                     left={<TextInput.Icon icon="scale" />}
                                     right={<TextInput.Icon icon="menu-down" onPress={() => setUnitMenuVisible(true)} />}
-                                    editable={true}
+                                    editable={false}
                                 />
                                 <Menu
                                     visible={unitMenuVisible}
@@ -365,7 +399,7 @@ export default function EditProduct ({ route, navigation }) {
                         </View>
 
                         <TextInput
-                            label="Delivery Options"
+                            label="Opciones de Entrega"
                             value={product.deliveryOptions}
                             onChangeText={(text) => updateProduct("deliveryOptions", text)}
                             mode="outlined"
@@ -387,7 +421,7 @@ export default function EditProduct ({ route, navigation }) {
                     disabled={loading}
                     icon="check"
                 >
-                    Submit Changes
+                    Guardar Producto
                 </Button>
             </ScrollView>
         </View>
@@ -398,24 +432,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#F5F5F5",
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 20,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
-        elevation: 4,
-    },
-    backButton: {
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
-        margin: 0,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "#FFFFFF",
-        marginLeft: 10,
     },
     form: {
         flex: 1,
@@ -437,6 +453,46 @@ const styles = StyleSheet.create({
         alignItems: "center",
         padding: 16,
     },
+    imageContainer: {
+        width: "100%",
+        height: 200,
+        position: "relative",
+        backgroundColor: COLORS.white,
+        marginBottom: 16,
+        borderRadius: 8,
+        overflow: "hidden",
+    },
+    productImage: {
+        width: "100%",
+        height: "100%",
+    },
+    productImagePlaceholder: {
+        width: "100%",
+        height: "100%",
+        backgroundColor: COLORS.secondary,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    imagePlaceholderText: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: "500",
+        marginTop: 10,
+    },
+    categoryBadge: {
+        position: "absolute",
+        top: 10,
+        right: 10,
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    categoryText: {
+        color: COLORS.white,
+        fontSize: 12,
+        fontWeight: "bold",
+    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: "bold",
@@ -455,9 +511,7 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "flex-start",
         marginBottom: 10,
-        
     },
     halfInput: {
         flex: 1,
@@ -489,29 +543,5 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 12,
         elevation: 4,
-    },
-
-    imageContainer: {
-        width: "100%",
-        height: 300,
-        position: "relative",
-        backgroundColor: COLORS.white,
-    },
-    productImage: {
-        width: "100%",
-        height: "100%",
-        borderRadius: 10,
-    },
-    productImagePlaceholder: {
-        height: "100%",
-        backgroundColor: COLORS.secondary,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    imagePlaceholderText: {
-        color: COLORS.white,
-        fontSize: 16,
-        fontWeight: "500",
-        marginTop: 10,
     },
 })
