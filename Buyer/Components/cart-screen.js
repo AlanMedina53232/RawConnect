@@ -15,7 +15,20 @@ import {
 } from "react-native"
 import { Button, Card, Divider, HelperText, IconButton, Modal, Portal, Text, TextInput } from "react-native-paper"
 import Icon from "react-native-vector-icons/MaterialCommunityIcons"
-import { addDoc, auth, collection, db, deleteDoc, doc, getDocs, query, updateDoc, where } from "../../config/fb.js"
+import {
+    addDoc,
+    auth,
+    collection,
+    db,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    setDoc,
+    updateDoc,
+    where,
+} from "../../config/fb"
 
 const CartScreen = () => {
     const navigation = useNavigation()
@@ -29,15 +42,19 @@ const CartScreen = () => {
         expiryDate: "",
         cvv: "",
     })
+    const [savedCard, setSavedCard] = useState(null)
+    const [useStoredCard, setUseStoredCard] = useState(false)
     const [errors, setErrors] = useState({})
     const [processingPayment, setProcessingPayment] = useState(false)
 
     useEffect(() => {
         fetchCartItems()
+        fetchSavedCardInfo()
 
         // Añadir un listener para cuando la pantalla recibe el foco
         const unsubscribeFocus = navigation.addListener("focus", () => {
             fetchCartItems()
+            fetchSavedCardInfo()
         })
 
         // Limpiar el listener cuando el componente se desmonta
@@ -51,6 +68,47 @@ const CartScreen = () => {
         }, 0)
         setTotalPrice(total)
     }, [cartItems])
+
+    const fetchSavedCardInfo = async () => {
+        try {
+            if (!auth.currentUser) return
+
+            const userEmail = auth.currentUser.email
+            const cardDocRef = doc(db, "userPaymentMethods", userEmail)
+            const cardDoc = await getDoc(cardDocRef)
+
+            if (cardDoc.exists()) {
+                const cardData = cardDoc.data()
+                setSavedCard(cardData)
+
+                // Pre-fill the form with saved data except CVV
+                if (cardData) {
+                    setPaymentInfo({
+                        cardNumber: cardData.cardNumber || "",
+                        cardHolder: cardData.cardHolder || "",
+                        expiryDate: cardData.expiryDate || "",
+                        cvv: "", // CVV nunca se guarda por seguridad
+                    })
+                    setUseStoredCard(true)
+                }
+            } else {
+                setSavedCard(null)
+                setUseStoredCard(false)
+
+                // Reset payment info if no saved card
+                setPaymentInfo({
+                    cardNumber: "",
+                    cardHolder: "",
+                    expiryDate: "",
+                    cvv: "",
+                })
+            }
+        } catch (error) {
+            console.error("Error fetching saved card:", error)
+            setSavedCard(null)
+            setUseStoredCard(false)
+        }
+    }
 
     const fetchCartItems = async () => {
         try {
@@ -132,37 +190,67 @@ const CartScreen = () => {
     const validatePaymentInfo = () => {
         const newErrors = {}
 
-        if (!paymentInfo.cardNumber.trim() || paymentInfo.cardNumber.length < 16) {
-            newErrors.cardNumber = "Please enter a valid 16-digit card number"
-        }
-
-        if (!paymentInfo.cardHolder.trim()) {
-            newErrors.cardHolder = "Please enter the cardholder name"
-        }
-
-        if (!paymentInfo.expiryDate.trim() || !paymentInfo.expiryDate.includes("/")) {
-            newErrors.expiryDate = "Please enter a valid expiry date (MM/YY)"
-        } else {
-            const [month, year] = paymentInfo.expiryDate.split("/")
-            const currentYear = new Date().getFullYear() % 100
-            const currentMonth = new Date().getMonth() + 1
-
-            if (
-                Number.parseInt(year) < currentYear ||
-                (Number.parseInt(year) === currentYear && Number.parseInt(month) < currentMonth) ||
-                Number.parseInt(month) > 12 ||
-                Number.parseInt(month) < 1
-            ) {
-                newErrors.expiryDate = "Card has expired or date is invalid"
+        if (useStoredCard) {
+            // Si usa tarjeta guardada, solo validar CVV
+            if (!paymentInfo.cvv.trim() || paymentInfo.cvv.length < 3) {
+                newErrors.cvv = "Please enter a valid CVV"
             }
-        }
+        } else {
+            // Validación completa para nueva tarjeta
+            if (!paymentInfo.cardNumber.trim() || paymentInfo.cardNumber.length < 16) {
+                newErrors.cardNumber = "Please enter a valid 16-digit card number"
+            }
 
-        if (!paymentInfo.cvv.trim() || paymentInfo.cvv.length < 3) {
-            newErrors.cvv = "Please enter a valid CVV"
+            if (!paymentInfo.cardHolder.trim()) {
+                newErrors.cardHolder = "Please enter the cardholder name"
+            }
+
+            if (!paymentInfo.expiryDate.trim() || !paymentInfo.expiryDate.includes("/")) {
+                newErrors.expiryDate = "Please enter a valid expiry date (MM/YY)"
+            } else {
+                const [month, year] = paymentInfo.expiryDate.split("/")
+                const currentYear = new Date().getFullYear() % 100
+                const currentMonth = new Date().getMonth() + 1
+
+                if (
+                    Number.parseInt(year) < currentYear ||
+                    (Number.parseInt(year) === currentYear && Number.parseInt(month) < currentMonth) ||
+                    Number.parseInt(month) > 12 ||
+                    Number.parseInt(month) < 1
+                ) {
+                    newErrors.expiryDate = "Card has expired or date is invalid"
+                }
+            }
+
+            if (!paymentInfo.cvv.trim() || paymentInfo.cvv.length < 3) {
+                newErrors.cvv = "Please enter a valid CVV"
+            }
         }
 
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
+    }
+
+    const saveCardInformation = async () => {
+        try {
+            if (!auth.currentUser) return
+
+            const userEmail = auth.currentUser.email
+            const cardDocRef = doc(db, "userPaymentMethods", userEmail)
+
+            // Guardar información de la tarjeta excepto el CVV
+            await setDoc(cardDocRef, {
+                cardNumber: paymentInfo.cardNumber,
+                cardHolder: paymentInfo.cardHolder,
+                expiryDate: paymentInfo.expiryDate,
+                lastFour: paymentInfo.cardNumber.slice(-4),
+                updatedAt: new Date(),
+            })
+
+            console.log("Card information saved successfully")
+        } catch (error) {
+            console.error("Error saving card information:", error)
+        }
     }
 
     const handleCheckout = async () => {
@@ -174,6 +262,11 @@ const CartScreen = () => {
             if (cartItems.length === 0) {
                 Alert.alert("Error", "Your cart is empty")
                 return
+            }
+
+            // Si no está usando una tarjeta guardada, guardar la información de la tarjeta
+            if (!useStoredCard) {
+                await saveCardInformation()
             }
 
             // Group items by vendor
@@ -207,8 +300,8 @@ const CartScreen = () => {
                     createdAt: new Date(),
                     // Store last 4 digits of card for reference
                     paymentDetails: {
-                        cardLast4: paymentInfo.cardNumber.slice(-4),
-                        cardHolder: paymentInfo.cardHolder,
+                        cardLast4: useStoredCard ? savedCard.lastFour : paymentInfo.cardNumber.slice(-4),
+                        cardHolder: useStoredCard ? savedCard.cardHolder : paymentInfo.cardHolder,
                     },
                 })
 
@@ -283,6 +376,11 @@ const CartScreen = () => {
             </Button>
         </View>
     )
+
+    const toggleUseStoredCard = () => {
+        setUseStoredCard(!useStoredCard)
+        setErrors({})
+    }
 
     if (loading) {
         return (
@@ -391,44 +489,89 @@ const CartScreen = () => {
                             <Icon name="credit-card-multiple" size={24} color="#6bb2db" style={styles.cardIcon} />
                         </View>
 
-                        <TextInput
-                            label="Card Number"
-                            value={paymentInfo.cardNumber}
-                            onChangeText={formatCardNumber}
-                            style={styles.input}
-                            keyboardType="numeric"
-                            maxLength={19} // 16 digits + 3 spaces
-                            error={!!errors.cardNumber}
-                            left={<TextInput.Icon icon="credit-card" />}
-                        />
-                        {errors.cardNumber && <HelperText type="error">{errors.cardNumber}</HelperText>}
+                        {savedCard && (
+                            <Card style={styles.savedCardContainer}>
+                                <Card.Content>
+                                    <View style={styles.savedCardHeader}>
+                                        <Text style={styles.savedCardTitle}>Saved Card</Text>
+                                        <TouchableOpacity onPress={toggleUseStoredCard}>
+                                            <Icon
+                                                name={useStoredCard ? "checkbox-marked" : "checkbox-blank-outline"}
+                                                size={24}
+                                                color="#6bb2db"
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                    {useStoredCard && (
+                                        <View style={styles.savedCardDetails}>
+                                            <Text style={styles.savedCardNumber}>•••• •••• •••• {savedCard.lastFour}</Text>
+                                            <Text style={styles.savedCardName}>{savedCard.cardHolder}</Text>
+                                            <Text style={styles.savedCardExpiry}>Expires: {savedCard.expiryDate}</Text>
+                                        </View>
+                                    )}
+                                </Card.Content>
+                            </Card>
+                        )}
 
-                        <TextInput
-                            label="Cardholder Name"
-                            value={paymentInfo.cardHolder}
-                            onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cardHolder: text })}
-                            style={styles.input}
-                            error={!!errors.cardHolder}
-                            left={<TextInput.Icon icon="account" />}
-                        />
-                        {errors.cardHolder && <HelperText type="error">{errors.cardHolder}</HelperText>}
-
-                        <View style={styles.row}>
-                            <View style={styles.halfInput}>
+                        {!useStoredCard && (
+                            <>
                                 <TextInput
-                                    label="Expiry Date (MM/YY)"
-                                    value={paymentInfo.expiryDate}
-                                    onChangeText={formatExpiryDate}
+                                    label="Card Number"
+                                    value={paymentInfo.cardNumber}
+                                    onChangeText={formatCardNumber}
                                     style={styles.input}
                                     keyboardType="numeric"
-                                    maxLength={5} // MM/YY
-                                    error={!!errors.expiryDate}
-                                    left={<TextInput.Icon icon="calendar" />}
+                                    maxLength={19} // 16 digits + 3 spaces
+                                    error={!!errors.cardNumber}
+                                    left={<TextInput.Icon icon="credit-card" />}
                                 />
-                                {errors.expiryDate && <HelperText type="error">{errors.expiryDate}</HelperText>}
-                            </View>
+                                {errors.cardNumber && <HelperText type="error">{errors.cardNumber}</HelperText>}
 
-                            <View style={styles.halfInput}>
+                                <TextInput
+                                    label="Cardholder Name"
+                                    value={paymentInfo.cardHolder}
+                                    onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cardHolder: text })}
+                                    style={styles.input}
+                                    error={!!errors.cardHolder}
+                                    left={<TextInput.Icon icon="account" />}
+                                />
+                                {errors.cardHolder && <HelperText type="error">{errors.cardHolder}</HelperText>}
+
+                                <View style={styles.row}>
+                                    <View style={styles.halfInput}>
+                                        <TextInput
+                                            label="Expiry Date (MM/YY)"
+                                            value={paymentInfo.expiryDate}
+                                            onChangeText={formatExpiryDate}
+                                            style={styles.input}
+                                            keyboardType="numeric"
+                                            maxLength={5} // MM/YY
+                                            error={!!errors.expiryDate}
+                                            left={<TextInput.Icon icon="calendar" />}
+                                        />
+                                        {errors.expiryDate && <HelperText type="error">{errors.expiryDate}</HelperText>}
+                                    </View>
+
+                                    <View style={styles.halfInput}>
+                                        <TextInput
+                                            label="CVV"
+                                            value={paymentInfo.cvv}
+                                            onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cvv: text.replace(/\D/g, "") })}
+                                            style={styles.input}
+                                            keyboardType="numeric"
+                                            maxLength={4}
+                                            secureTextEntry
+                                            error={!!errors.cvv}
+                                            left={<TextInput.Icon icon="lock" />}
+                                        />
+                                        {errors.cvv && <HelperText type="error">{errors.cvv}</HelperText>}
+                                    </View>
+                                </View>
+                            </>
+                        )}
+
+                        {useStoredCard && (
+                            <View style={styles.cvvOnlyContainer}>
                                 <TextInput
                                     label="CVV"
                                     value={paymentInfo.cvv}
@@ -442,7 +585,7 @@ const CartScreen = () => {
                                 />
                                 {errors.cvv && <HelperText type="error">{errors.cvv}</HelperText>}
                             </View>
-                        </View>
+                        )}
 
                         <View style={styles.secureNotice}>
                             <Icon name="shield-check" size={20} color="#4CAF50" />
@@ -697,6 +840,42 @@ const styles = StyleSheet.create({
     payButton: {
         flex: 2,
         backgroundColor: "#6bb2db",
+    },
+    savedCardContainer: {
+        marginBottom: 15,
+        borderRadius: 10,
+        borderLeftWidth: 4,
+        borderLeftColor: "#6bb2db",
+    },
+    savedCardHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    savedCardTitle: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "#2c3e50",
+    },
+    savedCardDetails: {
+        marginTop: 10,
+    },
+    savedCardNumber: {
+        fontSize: 16,
+        marginBottom: 5,
+    },
+    savedCardName: {
+        fontSize: 14,
+        color: "#666",
+        marginBottom: 5,
+    },
+    savedCardExpiry: {
+        fontSize: 14,
+        color: "#666",
+    },
+    cvvOnlyContainer: {
+        marginTop: 10,
+        marginBottom: 10,
     },
 })
 

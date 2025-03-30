@@ -1,6 +1,8 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState } from "react";
+"use client"
+
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
+import { LinearGradient } from "expo-linear-gradient"
+import { useEffect, useState } from "react"
 import {
     Alert,
     Dimensions,
@@ -13,11 +15,11 @@ import {
     Text,
     TouchableOpacity,
     View,
-} from "react-native";
-import { Card } from "react-native-paper";
-import { addDoc, auth, collection, db, doc, getDocs, query, updateDoc, where } from "../../config/fb.js";
+} from "react-native"
+import { Card } from "react-native-paper"
+import { addDoc, auth, collection, db, doc, getDocs, query, updateDoc, where } from "../../config/fb"
+const { width } = Dimensions.get("window")
 
-const { width } = Dimensions.get("window");
 
 const COLORS = {
     primary: "#2c3e50",
@@ -32,8 +34,9 @@ const COLORS = {
     success: "#4CAF50",
     warning: "#FFC107",
     danger: "#F44336",
-};
+}
 
+// Map unit values to readable labels
 const unitLabels = {
     ud: "Units",
     box: "Boxes",
@@ -53,138 +56,164 @@ const unitLabels = {
     containers: "Containers",
     rolls: "Rolls",
     barrels: "Barrels",
-};
+}
 
 export default function ProductDetails({ route, navigation }) {
-    const { product } = route.params;
-    const [quantity, setQuantity] = useState(1);
-    const [stockStatus, setStockStatus] = useState("high");
+    const { product } = route.params
+    const [quantity, setQuantity] = useState(1)
+    const [stockStatus, setStockStatus] = useState("high") // high, medium, low
 
     useEffect(() => {
+        // Determine stock status based on available quantity
         if (product.quantity) {
             if (product.quantity < 10) {
-                setStockStatus("low");
+                setStockStatus("low")
             } else if (product.quantity < 50) {
-                setStockStatus("medium");
+                setStockStatus("medium")
             } else {
-                setStockStatus("high");
+                setStockStatus("high")
             }
         }
-    }, [product]);
+    }, [product])
 
+    // Format the createdAt timestamp
     const formatDate = (timestamp) => {
-        if (!timestamp) return "N/A";
+        if (!timestamp) return "N/A"
+
         try {
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
             return date.toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
-            });
+            })
         } catch (error) {
-            console.error("Error formatting date:", error);
-            return "N/A";
+            console.error("Error formatting date:", error)
+            return "N/A"
         }
-    };
+    }
 
+    // Parse specifications if it's a string
     const getSpecifications = () => {
-        if (!product.specifications) return {};
+        if (!product.specifications) return {}
+
         if (typeof product.specifications === "string") {
             try {
-                return JSON.parse(product.specifications);
+                return JSON.parse(product.specifications)
             } catch (e) {
-                return { Details: product.specifications };
+                // If it's not valid JSON, return it as a single specification
+                return { Details: product.specifications }
             }
         }
-        return product.specifications;
-    };
+
+        return product.specifications
+    }
 
     const incrementQuantity = () => {
         if (product.quantity && quantity >= product.quantity) {
-            Alert.alert("Maximum Stock", `Only ${product.quantity} ${getUnitLabel()} available.`);
-            return;
+            Alert.alert("Maximum Stock", `Only ${product.quantity} ${getUnitLabel()} available.`)
+            return
         }
-        setQuantity(quantity + 1);
-    };
+        setQuantity(quantity + 1)
+    }
 
     const decrementQuantity = () => {
         if (quantity > 1) {
-            setQuantity(quantity - 1);
+            setQuantity(quantity - 1)
         }
-    };
+    }
+
+    // Add this function to the ProductDetails component to handle adding to cart
 
     const addToCart = async () => {
+        if (product.quantity && quantity > product.quantity) {
+            Alert.alert("Insufficient Stock", `Only ${product.quantity} ${getUnitLabel()} available.`)
+            return
+        }
+
         try {
             if (!auth.currentUser) {
                 Alert.alert("Please Login", "You need to be logged in to add items to your cart", [
-                    { text: "Login", onPress: () => navigation.navigate("Login") },
-                    { text: "Cancel", style: "cancel" },
-                ]);
-                return;
+                    {
+                        text: "Login",
+                        onPress: () => navigation.navigate("Login"),
+                    },
+                    {
+                        text: "Cancel",
+                        style: "cancel",
+                    },
+                ])
+                return
             }
 
-            if (product.quantity && quantity > product.quantity) {
-                Alert.alert("Insufficient Stock", `Only ${product.quantity} ${getUnitLabel()} available.`);
-                return;
-            }
-
+            // Check if the item is already in the cart
             const cartQuery = query(
                 collection(db, "cart"),
                 where("userEmail", "==", auth.currentUser.email),
-                where("productId", "==", product.id)
-            );
+                where("productId", "==", product.id),
+            )
 
-            const querySnapshot = await getDocs(cartQuery);
+            const querySnapshot = await getDocs(cartQuery)
 
             if (!querySnapshot.empty) {
-                const cartItem = querySnapshot.docs[0];
-                const newQuantity = cartItem.data().quantity + quantity;
+                // Item already in cart, update quantity
+                const cartItem = querySnapshot.docs[0]
+                const currentQuantity = cartItem.data().quantity
+                const newQuantity = currentQuantity + quantity
 
                 if (newQuantity > product.quantity) {
                     Alert.alert(
                         "Insufficient Stock",
-                        `You already have ${cartItem.data().quantity} in your cart. Only ${product.quantity} available.`
-                    );
-                    return;
+                        `You already have ${currentQuantity} in your cart. Only ${product.quantity} units available in total.`,
+                    )
+                    return
                 }
 
                 await updateDoc(doc(db, "cart", cartItem.id), {
                     quantity: newQuantity,
-                });
+                })
 
-                Alert.alert("Success", `Updated quantity to ${newQuantity} ${getUnitLabel()}`);
+                Alert.alert("Success", `Updated quantity in cart to ${newQuantity} ${getUnitLabel()}`)
             } else {
+                // Add new item to cart
                 await addDoc(collection(db, "cart"), {
                     userEmail: auth.currentUser.email,
                     productId: product.id,
                     productName: product.name,
                     price: product.price,
                     quantity: quantity,
-                    unitMeasure: product.unitMeasure || "ud",
+                    unitMeasure: product.unitMeasure || "units",
                     imageUrl: product.imageUrl || null,
                     vendorEmail: product.vendor || "Unknown vendor",
                     productStock: product.quantity,
                     addedAt: new Date(),
-                });
+                })
 
-                Alert.alert("Success", `Added ${quantity} ${getUnitLabel()} to cart`);
+                Alert.alert("Success", `Added ${quantity} ${getUnitLabel()} to your cart`)
             }
         } catch (error) {
-            console.error("Error adding to cart:", error);
-            Alert.alert("Error", error.message || "Failed to add item to cart");
+            console.error("Error adding to cart:", error)
+            Alert.alert("Error", "Failed to add item to cart. Please try again.")
         }
-    };
+    }
 
-    const getUnitLabel = () => unitLabels[product.unitMeasure] || product.unitMeasure || "units";
+    const getUnitLabel = () => {
+        if (!product.unitMeasure) return "units"
+        return unitLabels[product.unitMeasure] || product.unitMeasure
+    }
 
     const getStockColor = () => {
         switch (stockStatus) {
-            case "high": return "#6bb2db";
-            case "medium": return COLORS.warning;
-            case "low": return COLORS.danger;
-            default: return COLORS.gray;
+            case "high":
+                return "#6bb2db" // Changed from COLORS.success to blue
+            case "medium":
+                return COLORS.warning
+            case "low":
+                return COLORS.danger
+            default:
+                return COLORS.gray
         }
-    };
+    }
 
     const getStockText = () => {
         switch (stockStatus) {
@@ -242,17 +271,22 @@ export default function ProductDetails({ route, navigation }) {
                     </View>
 
                     {/* Stock Status Card */}
-                    <Card style={[styles.stockCard, { borderLeftColor: getStockColor() }]}>
+                    <Card style={[
+                        styles.stockCard,
+                        {
+                            borderLeftColor: "#195c87",  // Color del borde izquierdo (naranja en este ejemplo)
+                            backgroundColor: "#f0f3f5"   // Color de fondo de la card (naranja claro)
+                        }
+                    ]}>
                         <Card.Content style={styles.stockCardContent}>
                             <View style={styles.stockInfo}>
                                 <MaterialCommunityIcons
-                                    name="cart-variant"
+                                    name="cart"
                                     size={24}
-                                    color={getStockColor()}
+                                    color="#333333"
                                 />
-
                                 <View style={styles.stockTextContainer}>
-                                    <Text style={[styles.stockQuantity, { color: getStockColor() }]}>
+                                    <Text style={[styles.stockQuantity, { color: "#333333" }]}>
                                         {product.quantity ? `${product.quantity} ${getUnitLabel()} available` : "Stock not specified"}
                                     </Text>
                                 </View>
@@ -331,22 +365,24 @@ export default function ProductDetails({ route, navigation }) {
                         <TouchableOpacity
                             style={styles.quantityButton}
                             onPress={incrementQuantity}
-                            disabled={product.quantity && quantity >= product.quantity}
+                            disabled={!!product.quantity && quantity >= product.quantity}
                         >
                             <Ionicons
                                 name="add"
                                 size={20}
-                                color={product.quantity && quantity >= product.quantity ? COLORS.gray : COLORS.text}
+                                color={!!product.quantity && quantity >= product.quantity ? COLORS.gray : COLORS.text}
                             />
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity
-                        style={[styles.addToCartButton, product.quantity === 0 && styles.disabledButton]}
+                        style={[styles.addToCartButton, (!product.quantity || product.quantity === 0) && styles.disabledButton]}
                         onPress={addToCart}
-                        disabled={product.quantity === 0}
+                        disabled={!product.quantity || product.quantity === 0}
                     >
                         <Ionicons name="cart-outline" size={20} color={COLORS.white} />
-                        <Text style={styles.addToCartText}>{product.quantity === 0 ? "Out of Stock" : "Add to Cart"}</Text>
+                        <Text style={styles.addToCartText}>
+                            {!product.quantity || product.quantity === 0 ? "Out of Stock" : "Add to Cart"}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </LinearGradient>

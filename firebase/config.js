@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, signOut } from "firebase/auth";
+import { doc, getDoc, getFirestore, setDoc, updateDoc } from "firebase/firestore";
 
 const firebaseConfig = {
 
@@ -26,11 +26,7 @@ const auth = getAuth(app);
 
 
 export {
-    db,
-    auth,
-    doc,
+    auth, db, doc,
     getDoc,
-    setDoc,
-    updateDoc,
-    signOut
+    setDoc, signOut, updateDoc
 };

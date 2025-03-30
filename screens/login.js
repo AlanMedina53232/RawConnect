@@ -1,10 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import { Box, Input, NativeBaseProvider } from 'native-base';
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, Card, Text } from 'react-native-paper';
 import Footer from '../components/Footer';
-import { auth, db, doc, getDoc, signInWithEmailAndPassword, onAuthStateChanged } from '../config/fb.js'; 
+import { auth, db, doc, getDoc, onAuthStateChanged, signInWithEmailAndPassword } from '../config/fb.js';
 
 export default function Login({ navigation }) {
   const [user, setUser] = useState("");
@@ -14,13 +14,13 @@ export default function Login({ navigation }) {
     pass: "",
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        
+
         const docRef = doc(db, "Roles", currentUser.email);
         const docSnap = await getDoc(docRef);
 
@@ -37,10 +37,10 @@ export default function Login({ navigation }) {
           setError("User not found in roles collection.");
         }
       }
-      setLoading(false); 
+      setLoading(false);
     });
 
-    
+
     return () => unsubscribe();
   }, [navigation]);
 
@@ -131,8 +131,8 @@ export default function Login({ navigation }) {
   };
 
   const predefinedUserBuyer = {
-    email: "jorgito@gmail.com",
-    password: "Jorgito123456&"
+    email: "briankkk1@gmail.com",
+    password: "B12345"
   };
 
 
