@@ -121,12 +121,9 @@ const CartScreen = () => {
             const querySnapshot = await getDocs(cartQuery)
             const items = []
             querySnapshot.forEach((doc) => {
-                items.push({
-                    id: doc.id,
-                    ...doc.data(),
-                })
+                items.push({ id: doc.id, ...doc.data() })
             })
-
+            console.log("Cart items fetched:", items.length)
             setCartItems(items)
         } catch (error) {
             console.error("Error fetching cart items:", error)
@@ -215,8 +212,7 @@ const CartScreen = () => {
                 lastFour: paymentInfo.cardNumber.slice(-4),
                 updatedAt: new Date(),
             })
-
-            
+            console.log("Card information saved successfully")
         } catch (error) {
             console.error("Error saving card information:", error)
         }
