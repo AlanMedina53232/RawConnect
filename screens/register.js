@@ -1,93 +1,92 @@
-"use client"
 
-import { StatusBar } from "expo-status-bar"
-import { Box, NativeBaseProvider, Pressable, Text } from "native-base"
-import React from "react"
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native"
-import { SceneMap, TabView } from "react-native-tab-view"
 
-import { Card } from "react-native-paper"
-import Footer from "../components/Footer"
-import Reg from "../components/formReg"
+import { MaterialIcons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
+import { Box, NativeBaseProvider, Pressable, Text, extendTheme } from "native-base";
+import React from "react";
+import { Dimensions, StyleSheet, View } from "react-native";
+import { SceneMap, TabView } from "react-native-tab-view";
+import Reg from "../components/formReg";
+
+// Configurar el tema personalizado
+const theme = extendTheme({
+  colors: {
+    cyan: {
+      500: "#263238",
+      600: "#263238",
+    },
+    coolGray: {
+      400: "#9ca3af",
+    }
+  },
+  components: {
+    Text: {
+      baseStyle: {
+        fontFamily: "Inter",
+      },
+    },
+  },
+});
 
 export default function Register() {
   const FirstRoute = () => (
     <Box flex={1} my="4">
-      <Card style={styles.card}>
-        <Card.Content style={styles.cardContent}>
-          <ScrollView contentContainerStyle={styles.scrollView}>
-            <Box width="100%">
-              <Reg isProducer={false} />
-            </Box>
-          </ScrollView>
-        </Card.Content>
-      </Card>
+      <View style={styles.glassCard}>
+        <Reg isProducer={false} />
+      </View>
     </Box>
-  )
+  );
 
   const SecondRoute = () => (
     <Box flex={1} my="4">
-      <Card style={styles.card}>
-        <Card.Content style={styles.cardContent}>
-          <ScrollView contentContainerStyle={styles.scrollView}>
-            <Box width="100%">
-              <Reg isProducer={true} />
-            </Box>
-          </ScrollView>
-        </Card.Content>
-      </Card>
+      <View style={styles.glassCard}>
+        <Reg isProducer={true} />
+      </View>
     </Box>
-  )
+  );
 
-  const initialLayout = {
-    width: Dimensions.get("window").width,
-  }
+  const initialLayout = { width: Dimensions.get("window").width };
 
-  const renderScene = SceneMap({
-    first: FirstRoute,
-    second: SecondRoute,
-  })
+  const renderScene = SceneMap({ first: FirstRoute, second: SecondRoute });
 
   function Add() {
-    const [index, setIndex] = React.useState(0)
+    const [index, setIndex] = React.useState(0);
     const [routes] = React.useState([
-      { key: "first", title: "For a Buyer" },
-      { key: "second", title: "For a Producer" },
-    ])
+      { key: "first", title: "Buyer", icon: "shopping-cart" },
+      { key: "second", title: "Producer", icon: "local-florist" },
+    ]);
 
     const renderTabBar = (props) => {
-      const inputRange = props.navigationState.routes.map((x, i) => i)
-
-      // Define colors outside the map function to avoid conditional hook calls
-      const activeColor = "#000"
-      const inactiveColor = "#1f2937"
-      const activeBorderColor = "cyan.500"
-      const inactiveBorderColor = "coolGray.200"
-
       return (
         <Box flexDirection="row" style={styles.tabBar}>
           {props.navigationState.routes.map((route, i) => {
-            const color = index === i ? activeColor : inactiveColor
-            const borderColor = index === i ? activeBorderColor : inactiveBorderColor
+            const isActive = index === i;
             return (
-              <Box
-                borderBottomWidth="3"
-                borderColor={borderColor}
-                flex={1}
-                alignItems="center"
-                p="3"
-                cursor="pointer"
+              <Pressable
                 key={i}
+                onPress={() => setIndex(i)}
+                style={[styles.tabButton, isActive && styles.activeTab]}
               >
-                <Pressable onPress={() => setIndex(i)}>
-                  <Text style={{ color }}>{route.title}</Text>
-                </Pressable>
-              </Box>
-            )
+                <MaterialIcons
+                  name={route.icon}
+                  size={24}
+                  color={isActive ? theme.colors.cyan[500] : theme.colors.coolGray[400]}
+                  style={styles.tabIcon}
+                />
+                <Text
+                  fontSize="md"
+                  fontWeight="bold"
+                  color={isActive ? "cyan.500" : "coolGray.400"}
+                  style={styles.tabText}
+                >
+                  {route.title}
+                </Text>
+              </Pressable>
+            );
           })}
         </Box>
-      )
-    }
+      );
+    };
 
     return (
       <TabView
@@ -96,61 +95,93 @@ export default function Register() {
         renderTabBar={renderTabBar}
         onIndexChange={setIndex}
         initialLayout={initialLayout}
-        style={{ marginTop: StatusBar.currentHeight }}
+        style={styles.tabView}
       />
-    )
+    );
   }
 
   return (
-    <NativeBaseProvider>
+    <NativeBaseProvider theme={theme}>
       <View style={styles.container}>
-        <StatusBar style="light" />
-        <Box>
+        <StatusBar style="dark" />
+        <View style={styles.content}>
+          <Text
+            fontSize="4xl"
+            fontWeight="extrabold"
+            color="cyan.600"
+            style={styles.title}
+          >
+            Join Us
+          </Text>
           <Add />
-        </Box>
-
-        <Footer />
+        </View>
       </View>
     </NativeBaseProvider>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f7f7f7", // Fondo gris claro para la pantalla
+    backgroundColor: 'white', // Fondo blanco sólido
+    paddingTop: 50,
   },
-  scrollView: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingVertical: 10,
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 25,
   },
-  card: {
-    width: "90%",
-    height: "90%",
-    marginTop: 20,
-    marginRight: 20,
-    marginLeft: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 5,
+  title: {
+    letterSpacing: -1.5,
+    marginBottom: 30,
+    textShadowColor: 'rgba(8, 145, 178, 0.1)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 10,
   },
-  cardContent: {
-    padding: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%", // Ajusta el contenido de la tarjeta al ancho
+  glassCard: {
+    width: '100%',
+    backgroundColor: 'white', // Blanco sólido
+    borderRadius: 25,
+    padding: 30,
+    shadowColor: '#rgba(0, 0, 0, 0.1)', // Sombra más neutral
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 30,
+    elevation: 10,
   },
   tabBar: {
-    width: "110%",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 10,
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 20,
+    padding: 5,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(8, 145, 178, 0.1)',
   },
-})
-
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderRadius: 15,
+    backgroundColor: 'transparent',
+  },
+  activeTab: {
+    backgroundColor: 'rgba(8, 145, 178, 0.05)',
+  },
+  tabIcon: {
+    marginRight: 10,
+  },
+  tabText: {
+    letterSpacing: -0.5,
+  },
+  tabView: {
+    width: '100%',
+    maxWidth: 500,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+  },
+});

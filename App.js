@@ -1,39 +1,31 @@
 import { NavigationContainer } from "@react-navigation/native"
 import { createStackNavigator } from "@react-navigation/stack"
-import { StyleSheet, TouchableOpacity } from "react-native"
+import { StyleSheet, TouchableOpacity, View } from "react-native"
 import { DefaultTheme, Provider as PaperProvider, Text } from "react-native-paper"
 import Agricultural from "./Buyer/Components/Agricultural"
-
 import ProductDetails from "./Buyer/Components/ProductDetails"
-
 import MainBuyer from "./Buyer/MainBuyer"
-import MainProducer from "./Producer/MainProducer"
+import AddProductScreen from "./Producer/Components/add-product-screen"
+import DeleteProduct from "./Producer/Components/DeleteProduct"
+import EditProduct from "./Producer/Components/EditProduct"
+import MyOrdersScreen from "./Producer/Components/my-orders-screen"
+import MyProducts from "./Producer/Components/MyProducts"
+import ProductManagementScreen from "./Producer/Components/product-management-screen"
+import ProfileScreen from "./Producer/Components/profile-screen"
+import { default as HomeScreen, default as MainProducer } from "./Producer/MainProducer"
 import Login from "./screens/login"
 import Principal from "./screens/principal"
 import Register from "./screens/register"
-import MyProducts from "./Producer/Components/MyProducts"
-
-// Import the new producer screens
-import AddProductScreen from "./Producer/Components/add-product-screen"
-import MyOrdersScreen from "./Producer/Components/my-orders-screen"
-import ProductManagementScreen from "./Producer/Components/product-management-screen"
-import ProfileScreen from "./Producer/Components/profile-screen"
-import HomeScreen from "./Producer/MainProducer"
-import EditProduct from "./Producer/Components/EditProduct"
-import DeleteProduct from "./Producer/Components/DeleteProduct"
-
-
 
 const Stack = createStackNavigator()
 
-// Define the theme
 const theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: "#0D47A1",
-    accent: "#1976D2",
-    background: "#263238",
+    primary: "#2c3e50",
+    accent: "#3498db",
+    background: "#f8f9fa",
     surface: "#FFFFFF",
   },
 }
@@ -42,16 +34,43 @@ function App() {
   return (
     <PaperProvider theme={theme}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Principal">
+        <Stack.Navigator
+          initialRouteName="Principal"
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: '#2c3e50',
+              elevation: 10,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 6,
+              borderBottomWidth: 1,
+              borderBottomColor: 'rgba(236, 240, 241, 0.1)',
+            },
+            headerTitleStyle: {
+              color: '#ecf0f1',
+              fontSize: 20,
+              fontWeight: '700',
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+            },
+            headerTitleAlign: 'center',
+            headerBackTitleVisible: false,
+            headerTintColor: '#ecf0f1',
+          }}
+        >
           <Stack.Screen
             name="Principal"
             component={Principal}
             options={({ navigation }) => ({
+              headerTitle: () => null, // Remove the title
               headerRight: () => (
                 <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                  <Text style={styles.link}>Login/Register</Text>
+                  <Text style={styles.loginText}>Login</Text>
                 </TouchableOpacity>
               ),
+              // Center the button by adding left space
+              headerLeft: () => <View style={{ width: 24, marginLeft: 15 }} />,
             })}
           />
           <Stack.Screen name="Login" component={Login} />
@@ -59,16 +78,12 @@ function App() {
           <Stack.Screen
             name="MainProducer"
             component={MainProducer}
-            options={{
-              headerShown: false,
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="MainBuyer"
             component={MainBuyer}
-            options={{
-              headerShown: false,
-            }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen name="Agricultural" component={Agricultural} />
           <Stack.Screen name="ProductDetails" component={ProductDetails} />
@@ -78,12 +93,11 @@ function App() {
             options={{
               title: "My Profile",
               headerStyle: {
-                backgroundColor: "#263238",
+                backgroundColor: "#2c3e50",
               },
-              headerTintColor: "#fff",
+              headerTintColor: "#ecf0f1",
             }}
           />
-
           <Stack.Screen
             name="ProducerHome"
             component={HomeScreen}
@@ -120,33 +134,33 @@ function App() {
             name="MyProducts"
             component={MyProducts}
             options={{
-              title: "My Products",  // Título personalizado para la pantalla
+              title: "My Products",
               headerStyle: {
-                backgroundColor: "#263238", // Estilo de la barra de navegación (puedes personalizarlo)
+                backgroundColor: "#2c3e50",
               },
-              headerTintColor: "#fff", // Color del texto en la barra de navegación
+              headerTintColor: "#ecf0f1",
             }}
           />
           <Stack.Screen
             name="EditProduct"
             component={EditProduct}
             options={{
-              title: "EditProduct",  // Título personalizado para la pantalla
+              title: "Edit Product",
               headerStyle: {
-                backgroundColor: "#263238", // Estilo de la barra de navegación (puedes personalizarlo)
+                backgroundColor: "#2c3e50",
               },
-              headerTintColor: "#fff", // Color del texto en la barra de navegación
+              headerTintColor: "#ecf0f1",
             }}
           />
           <Stack.Screen
             name="DeleteProduct"
             component={DeleteProduct}
             options={{
-              title: "DeleteProduct",  // Título personalizado para la pantalla
+              title: "Delete Product",
               headerStyle: {
-                backgroundColor: "#263238", // Estilo de la barra de navegación (puedes personalizarlo)
+                backgroundColor: "#2c3e50",
               },
-              headerTintColor: "#fff", // Color del texto en la barra de navegación
+              headerTintColor: "#ecf0f1",
             }}
           />
         </Stack.Navigator>
@@ -156,15 +170,15 @@ function App() {
 }
 
 export default App
-
 const styles = StyleSheet.create({
-  linksContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
+  loginText: {
+    marginRight: 25,
+    color: "#ecf0f1",
+    fontSize: 19,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    textAlign: "center",
+    textTransform: "uppercase",
+    opacity: 0.9,
   },
-  link: {
-    color: "#444141",
-    marginHorizontal: 20,
-    textDecorationLine: "underline",
-  },
-})
+});

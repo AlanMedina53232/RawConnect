@@ -1,42 +1,28 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View } from "react-native"
 
 const Footer = () => {
   return (
-    <View style={styles.footerContainer}>
-      <View style={styles.footerContent}>
-        <Text style={styles.footerText}>© CopyRight 2025</Text>
-      </View>
+    <View style={styles.footer}>
+      <Text style={styles.footerText}>© 2024 RawConnect. All rights reserved.</Text>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
-  footerContainer: {
-    position: 'absolute',
+  footer: {
+    position: "absolute",
     bottom: 0,
     left: 0,
-    right: 0,
-    backgroundColor: '#000000',
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
-  footerContent: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    backgroundColor: "#2c3e50",
+    paddingVertical: 15,
+    alignItems: "center",
   },
   footerText: {
-    fontSize: 14,
-    color: '#ffff',
+    color: "white",
+    fontSize: 12,
   },
-  linkText: {
-    fontSize: 14,
-    color: '#3498db',
-    marginLeft: 10,
-  },
-});
+})
 
-export default Footer;
+export default Footer
+
