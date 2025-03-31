@@ -17,7 +17,6 @@ import MyOrdersScreen from "./Components/my-orders-screen"
 const { width } = Dimensions.get("window")
 const Drawer = createDrawerNavigator()
 
-// 🌈 Fondo con gradiente
 const GradientBackground = ({ colors, style, children }) => (
   <View style={[styles.gradientContainer, style]}>
     {colors.map((color, index) => (

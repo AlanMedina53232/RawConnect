@@ -20,9 +20,8 @@ import { Card } from "react-native-paper"
 import { addDoc, auth, collection, db, doc, getDocs, query, updateDoc, where } from "../../config/fb"
 const { width } = Dimensions.get("window")
 
-
 const COLORS = {
-    primary: "#2c3e50",
+    primary: "#0D47A1",
     secondary: "#1976D2",
     accent: "#2196F3",
     white: "#FFFFFF",
@@ -228,6 +227,17 @@ export default function ProductDetails({ route, navigation }) {
         }
     }
 
+    // Verificar si la cantidad es mayor o igual a la cantidad del producto
+    const isMaxQuantity = () => {
+        if (!product.quantity) return false
+        return quantity >= product.quantity
+    }
+
+    // Verificar si el producto está fuera de stock
+    const isOutOfStock = () => {
+        return !product.quantity || product.quantity === 0
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor={COLORS.white} barStyle="dark-content" />
@@ -271,22 +281,22 @@ export default function ProductDetails({ route, navigation }) {
                     </View>
 
                     {/* Stock Status Card */}
-                    <Card style={[
-                        styles.stockCard,
-                        {
-                            borderLeftColor: "#195c87",  // Color del borde izquierdo (naranja en este ejemplo)
-                            backgroundColor: "#f0f3f5"   // Color de fondo de la card (naranja claro)
-                        }
-                    ]}>
+                    <Card style={[styles.stockCard, { borderLeftColor: getStockColor() }]}>
                         <Card.Content style={styles.stockCardContent}>
                             <View style={styles.stockInfo}>
                                 <MaterialCommunityIcons
-                                    name="cart"
+                                    name={
+                                        stockStatus === "high"
+                                            ? "package-variant-plus"
+                                            : stockStatus === "medium"
+                                                ? "package-variant"
+                                                : "package-variant-minus"
+                                    }
                                     size={24}
-                                    color="#333333"
+                                    color={getStockColor()}
                                 />
                                 <View style={styles.stockTextContainer}>
-                                    <Text style={[styles.stockQuantity, { color: "#333333" }]}>
+                                    <Text style={[styles.stockQuantity, { color: getStockColor() }]}>
                                         {product.quantity ? `${product.quantity} ${getUnitLabel()} available` : "Stock not specified"}
                                     </Text>
                                 </View>
@@ -362,27 +372,17 @@ export default function ProductDetails({ route, navigation }) {
                             <Ionicons name="remove" size={20} color={quantity <= 1 ? COLORS.gray : COLORS.text} />
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>{quantity}</Text>
-                        <TouchableOpacity
-                            style={styles.quantityButton}
-                            onPress={incrementQuantity}
-                            disabled={!!product.quantity && quantity >= product.quantity}
-                        >
-                            <Ionicons
-                                name="add"
-                                size={20}
-                                color={!!product.quantity && quantity >= product.quantity ? COLORS.gray : COLORS.text}
-                            />
+                        <TouchableOpacity style={styles.quantityButton} onPress={incrementQuantity} disabled={isMaxQuantity()}>
+                            <Ionicons name="add" size={20} color={isMaxQuantity() ? COLORS.gray : COLORS.text} />
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity
-                        style={[styles.addToCartButton, (!product.quantity || product.quantity === 0) && styles.disabledButton]}
+                        style={[styles.addToCartButton, isOutOfStock() && styles.disabledButton]}
                         onPress={addToCart}
-                        disabled={!product.quantity || product.quantity === 0}
+                        disabled={isOutOfStock()}
                     >
                         <Ionicons name="cart-outline" size={20} color={COLORS.white} />
-                        <Text style={styles.addToCartText}>
-                            {!product.quantity || product.quantity === 0 ? "Out of Stock" : "Add to Cart"}
-                        </Text>
+                        <Text style={styles.addToCartText}>{isOutOfStock() ? "Out of Stock" : "Add to Cart"}</Text>
                     </TouchableOpacity>
                 </View>
             </LinearGradient>
@@ -402,9 +402,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 15,
         paddingVertical: 15,
-        paddingTop: Platform.OS === "android" ? 15 : 50, // Add more padding for iOS
+        paddingTop: Platform.OS === "ios" ? 60 : 25, // Aumentado para iOS
         backgroundColor: COLORS.white,
         elevation: 2,
+        height: Platform.OS === "ios" ? 100 : 70, // Altura explícita para la barra
     },
     backButton: {
         width: 40,
