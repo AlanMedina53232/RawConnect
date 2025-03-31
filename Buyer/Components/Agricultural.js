@@ -79,16 +79,13 @@ export default function Agricultural({ navigation, route }) {
             if (category === "All") {
                 // Fetch all products
                 q = query(productsCollection)
-                console.log("Fetching all products")
             } else {
                 // Fetch products by category
                 q = query(productsCollection, where("category", "==", category))
-                console.log(`Fetching products with category: ${category}`)
             }
 
             const querySnapshot = await getDocs(q)
 
-            console.log("Number of products found:", querySnapshot.size)
 
             const productsList = querySnapshot.docs.map((doc) => ({
                 id: doc.id,
@@ -97,7 +94,7 @@ export default function Agricultural({ navigation, route }) {
                 rating: doc.data().rating || 4.5,
             }))
 
-            console.log("Products retrieved:", productsList)
+           
 
             setProducts(productsList)
             setFilteredProducts(productsList) // Inicialmente, no hay filtro, así que mostramos todos los productos

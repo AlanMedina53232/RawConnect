@@ -16,6 +16,7 @@ import { default as HomeScreen, default as MainProducer } from "./Producer/MainP
 import Login from "./screens/login"
 import Principal from "./screens/principal"
 import Register from "./screens/register"
+import OrderDetails from "./Producer/Components/OrderDetails"
 
 const Stack = createStackNavigator()
 
@@ -157,6 +158,17 @@ function App() {
             component={DeleteProduct}
             options={{
               title: "Delete Product",
+              headerStyle: {
+                backgroundColor: "#2c3e50",
+              },
+              headerTintColor: "#ecf0f1",
+            }}
+          />
+          <Stack.Screen
+            name="OrderDetails"
+            component={OrderDetails}
+            options={{
+              title: "Order Details",
               headerStyle: {
                 backgroundColor: "#2c3e50",
               },

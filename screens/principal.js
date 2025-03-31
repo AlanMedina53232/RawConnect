@@ -28,7 +28,7 @@ const Principal = ({ navigation }) => {
           {/* Contenedor del logo mejorado */}
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/default-avatar.png')}
+              source={require('../assets/logo2.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -85,8 +85,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logoImage: {
-    width: '80%',
-    height: '80%',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   title: {
     fontSize: 28,

@@ -92,7 +92,7 @@ const MainProducer = () => {
           contentStyle={styles.buttonContent}
           style={styles.button}
           labelStyle={styles.buttonLabel}
-          onPress={() => navigation.navigate("ProductManagement", { userData },  console.log(userData))}
+          onPress={() => navigation.navigate("ProductManagement", { userData })}
         >
           Manage Products
         </Button>

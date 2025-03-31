@@ -132,7 +132,6 @@ const CartScreen = () => {
                 })
             })
 
-            console.log("Cart items fetched:", items.length)
             setCartItems(items)
         } catch (error) {
             console.error("Error fetching cart items:", error)
@@ -247,7 +246,7 @@ const CartScreen = () => {
                 updatedAt: new Date(),
             })
 
-            console.log("Card information saved successfully")
+            
         } catch (error) {
             console.error("Error saving card information:", error)
         }

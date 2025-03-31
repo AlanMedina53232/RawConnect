@@ -75,12 +75,12 @@ const [products, setProducts] = useState([])
             if (category === "All") {
                 // Fetch all products
                 q = query(productsCollection, where("vendor", "==", userData.email))
-                console.log("Fetching all products")
+                
             } 
 
             const querySnapshot = await getDocs(q)
 
-            console.log("Number of products found:", querySnapshot.size)
+           
 
             const productsList = querySnapshot.docs.map((doc) => ({
                 id: doc.id,
@@ -89,7 +89,7 @@ const [products, setProducts] = useState([])
                 rating: doc.data().rating || 4.5,
             }))
 
-            console.log("Products retrieved:", productsList)
+           
 
             setProducts(productsList)
             setFilteredProducts(productsList) // Inicialmente, no hay filtro, así que mostramos todos los productos
@@ -124,7 +124,7 @@ const [products, setProducts] = useState([])
     }
 
     const navigateToEditProduct = (product) => {
-        navigation.navigate("EditProduct", { product }, console.log("los datos del producto enviado son: ", product))
+        navigation.navigate("EditProduct", { product })
     }
 
     // Update the screen title based on the selected category

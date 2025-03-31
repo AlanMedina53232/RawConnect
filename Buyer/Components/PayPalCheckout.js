@@ -58,7 +58,6 @@ const PayPalCheckout = ({ amount, onPaymentSuccess, onPaymentError }) => {
   const handleMessage = (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log("Mensaje de PayPal:", data);
       
       if (data.status === "success") {
         if (data.details.status === "COMPLETED") {

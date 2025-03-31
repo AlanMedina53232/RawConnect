@@ -22,7 +22,7 @@ const ProductManagementScreen = () => {
             </View>
 
             <View style={styles.actionCards}>
-                <Card style={styles.card} onPress={() => navigation.navigate("AddProduct", {userData}, console.log(userData)) }>
+                <Card style={styles.card} onPress={() => navigation.navigate("AddProduct", {userData}) }>
                     <Card.Content style={styles.cardContent}>
                         <IconButton icon="plus-circle" iconColor="#0D47A1" size={40} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Add Product</Text>

@@ -72,7 +72,7 @@ const HomeScreen = ({ navigation }) => {
 
         const querySnapshot = await getDocs(cartQuery)
         setCartItemCount(querySnapshot.size)
-        console.log("Cart count updated:", querySnapshot.size)
+        
       }
     } catch (error) {
       console.error("Error fetching cart count:", error)

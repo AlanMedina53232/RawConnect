@@ -38,12 +38,10 @@ const MyOrdersScreen = () => {
                 const role = roleDoc.docs[0].data().role
                 setUserRole(role)
             } else {
-                // Default to buyer if role not found
                 setUserRole(1)
             }
         } catch (error) {
             console.error("Error checking user role:", error)
-            // Default to buyer if there's an error
             setUserRole(1)
         }
     }
@@ -61,10 +59,8 @@ const MyOrdersScreen = () => {
             let ordersQuery
 
             if (userRole === 1) {
-                // Buyer - fetch orders placed by this user without orderBy initially
                 ordersQuery = query(collection(db, "orders"), where("buyerEmail", "==", userEmail))
             } else {
-                // Producer - fetch orders for this vendor without orderBy initially
                 ordersQuery = query(collection(db, "orders"), where("vendorEmail", "==", userEmail))
             }
 
@@ -79,9 +75,7 @@ const MyOrdersScreen = () => {
                 })
             })
 
-            // Sort the orders by date client-side instead of using orderBy
             ordersList.sort((a, b) => b.createdAt - a.createdAt)
-
             setOrders(ordersList)
         } catch (error) {
             console.error("Error fetching orders:", error)
@@ -104,7 +98,6 @@ const MyOrdersScreen = () => {
                 updatedAt: new Date(),
             })
 
-            // Update local state
             setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
 
             Alert.alert("Success", `Order ${newStatus}`)
@@ -117,17 +110,21 @@ const MyOrdersScreen = () => {
     const getStatusColor = (status) => {
         switch (status) {
             case "pending":
-                return "#FFC107" // Amber
+                return "#FFC107"
             case "accepted":
-                return "#2196F3" // Blue
+                return "#2196F3"
             case "shipped":
-                return "#6bb2db" // Light Blue
+                return "#6bb2db"
             case "delivered":
-                return "#4CAF50" // Green
+                return "#673AB7"
+            case "finalized":
+                return "#4CAF50"
+            case "not_received":
+                return "#F44336"
             case "cancelled":
-                return "#F44336" // Red
+                return "#F44336"
             default:
-                return "#9E9E9E" // Grey
+                return "#9E9E9E"
         }
     }
 
@@ -176,7 +173,7 @@ const MyOrdersScreen = () => {
                     return (
                         <Button
                             mode="contained"
-                            style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
+                            style={[styles.actionButton, { backgroundColor: "#673AB7" }]}
                             onPress={() => handleUpdateOrderStatus(order.id, "delivered")}
                         >
                             Mark as Delivered
@@ -187,18 +184,41 @@ const MyOrdersScreen = () => {
             }
         } else {
             // Buyer actions
-            if (order.status === "delivered") {
-                return null // No actions for delivered orders
-            } else if (order.status !== "cancelled") {
-                return (
-                    <Button
-                        mode="outlined"
-                        style={styles.cancelButton}
-                        onPress={() => handleUpdateOrderStatus(order.id, "cancelled")}
-                    >
-                        Cancel Order
-                    </Button>
-                )
+            switch (order.status) {
+                case "delivered":
+                    return (
+                        <View style={styles.deliveredActions}>
+                            <Button
+                                mode="contained"
+                                style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
+                                onPress={() => handleUpdateOrderStatus(order.id, "finalized")}
+                            >
+                                Confirm Delivery
+                            </Button>
+                            <Button
+                                mode="outlined"
+                                style={[styles.actionButton, { borderColor: "#F44336" }]}
+                                textColor="#F44336"
+                                onPress={() => handleUpdateOrderStatus(order.id, "not_received")}
+                            >
+                                Not Received
+                            </Button>
+                        </View>
+                    )
+                case "cancelled":
+                case "finalized":
+                case "not_received":
+                    return null
+                default:
+                    return (
+                        <Button
+                            mode="outlined"
+                            style={styles.cancelButton}
+                            onPress={() => handleUpdateOrderStatus(order.id, "cancelled")}
+                        >
+                            Cancel Order
+                        </Button>
+                    )
             }
         }
     }
@@ -248,7 +268,7 @@ const MyOrdersScreen = () => {
                                         style={[styles.statusChip, { backgroundColor: getStatusColor(order.status) }]}
                                         textStyle={styles.statusText}
                                     >
-                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
                                     </Chip>
                                 </View>
 
@@ -299,7 +319,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 10,
         paddingVertical: 15,
-        paddingTop: Platform.OS === "android" ? 15 : 50, // Add more padding for iOS
+        paddingTop: Platform.OS === "android" ? 15 : 50,
         backgroundColor: "#2c3e50",
     },
     title: {
@@ -307,7 +327,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#FFFFFF",
         textAlign: "center",
-        flex: 1, // Allow the title to take up available space
+        flex: 1,
     },
     ordersContainer: {
         padding: 15,
@@ -412,9 +432,14 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         marginTop: 10,
     },
+    deliveredActions: {
+        flexDirection: "column",
+        gap: 10,
+        marginTop: 10,
+    },
     actionButton: {
         flex: 1,
-        marginHorizontal: 5,
+        marginHorizontal: 0,
     },
     cancelButton: {
         marginTop: 10,
@@ -424,4 +449,3 @@ const styles = StyleSheet.create({
 })
 
 export default MyOrdersScreen
-
