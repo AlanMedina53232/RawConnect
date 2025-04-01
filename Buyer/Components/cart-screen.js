@@ -815,11 +815,14 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         backgroundColor: "white",
-        flex: 1,
+        // flex: 1,
         justifyContent: "center",
         margin: 15,
+        padding: 20,
         borderRadius: 10,
-        maxHeight: "90%",
+        height: '500',
+        width: 'auto',
+        maxwidth: "85%",
         overflow: "hidden",
     },
     modalTitle: {
@@ -875,7 +878,7 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         backgroundColor: "#2c3e50", // Color más oscuro para mejor contraste
         paddingVertical: 12,
-        borderRadius: 8,
+        borderRadius: 80,
         alignItems: "center",
     },
     methodButtonText: {
