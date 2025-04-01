@@ -1,6 +1,7 @@
 import 'dotenv/config'
 export default {
   "expo": {
+    
     "name": "RawConnect",
     "slug": "RawConnect",
     "version": "1.0.0",
@@ -17,6 +18,7 @@ export default {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.amedina53.RawConnect",
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo2.png",
         "backgroundColor": "#ffffff"
@@ -32,6 +34,9 @@ export default {
       storageBucket: process.env.STORAGE_BUCKET,
       messagingSenderId: process.env.MESSAGING_SENDER_ID,
       appId: process.env.APP_ID,
+     eas: {
+        projectId: "b63c7a4d-96e4-4f52-ad6f-ad59d2070237"
+      }
     }
   }
 }
