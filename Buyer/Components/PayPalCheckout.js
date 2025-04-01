@@ -3,33 +3,35 @@ import { View, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 import axios from 'axios';
 
-const BACKEND_URL = 'http://192.168.0.166:3001'; // Cambia por tu IP
+const BACKEND_URL = 'http://192.168.0.166:3001'; // CAMBIAR LA IP A LA DE TU COMPUTADORA, EL PUERTO NO SE CAMBIAA
 
-const PayPalCheckout = ({ amount, onPaymentSuccess, onClose }) => {
+const PayPalCheckout = ({ amount, onPaymentSuccess, onClose = () => {} }) => {
   const [approvalUrl, setApprovalUrl] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasCompletedPayment, setHasCompletedPayment] = useState(false);
   const isPaymentFinalized = useRef(false);
   const webViewRef = useRef(null);
 
-  // 1. Iniciar proceso de pago
+  // Si se ha completado el pago o el monto es inválido, no iniciamos el flujo
   useEffect(() => {
+    if (hasCompletedPayment) return;
+    if (Number(amount) <= 0) {
+      console.warn('[PayPal] Monto inválido:', amount);
+      onClose();
+      return;
+    }
     console.log('[PayPal] Monto recibido:', amount);
-    
     const initPayment = async () => {
       try {
         console.log('[PayPal] Solicitando URL de pago...');
         const response = await axios.post(`${BACKEND_URL}/create-payment`, {
           amount: Number(amount)
         });
-
         console.log('[PayPal] Respuesta del backend:', response.data);
-        
         if (!response.data?.approvalUrl) {
           throw new Error('No se recibió la URL de PayPal');
         }
-
         setApprovalUrl(response.data.approvalUrl);
-
       } catch (err) {
         console.error('[PayPal] Error:', {
           message: err.message,
@@ -41,40 +43,58 @@ const PayPalCheckout = ({ amount, onPaymentSuccess, onClose }) => {
         setLoading(false);
       }
     };
-
     initPayment();
-  }, [amount]);
+  }, [amount, onClose, hasCompletedPayment]);
 
-  // 2. Manejar redirecciones de PayPal
+  const getQueryParams = (url) => {
+    const params = {};
+    const parts = url.split('?');
+    if (parts.length < 2) return params;
+    parts[1].split('&').forEach((param) => {
+      const [key, value] = param.split('=');
+      params[key] = value;
+    });
+    return params;
+  };
+
   const handleNavigationStateChange = (navState) => {
     console.log('[PayPal] Navegando a:', navState.url);
-
     if (isPaymentFinalized.current) return;
 
-    // Detectar éxito
-    if (
-      navState.url.includes('/checkout/complete') || 
-      navState.url.includes('success') ||
-      navState.url.includes('capture')
-    ) {
-      console.log('[PayPal] Pago exitoso confirmado');
-      isPaymentFinalized.current = true;
-      onPaymentSuccess();
-      onClose();
+    if (navState.url.includes('/checkout/complete')) {
+      if (!isPaymentFinalized.current) {
+        isPaymentFinalized.current = true;
+        const queryParams = getQueryParams(navState.url);
+        const paymentId = queryParams.token;
+        const payerId = queryParams.PayerID;
+        if (paymentId && payerId) {
+          axios.post(`${BACKEND_URL}/execute-payment`, { paymentId, payerId })
+            .then(response => {
+              console.log('[PayPal] Pago completado:', response.data);
+              if (webViewRef.current) {
+                webViewRef.current.stopLoading();
+              }
+              onPaymentSuccess(response.data);
+              onClose();
+            })
+            .catch(error => {
+              console.error('[PayPal] Error al capturar el pago', error);
+              onClose();
+            });
+        } else {
+          console.error('[PayPal] No se pudieron obtener los parámetros necesarios');
+          onClose();
+        }
+      }
     }
 
-    // Detectar cancelación
-    if (
-      navState.url.includes('/checkout/error') ||
-      navState.url.includes('cancel')
-    ) {
+    if (navState.url.includes('/checkout/cancel')) {
       console.log('[PayPal] Pago cancelado');
       isPaymentFinalized.current = true;
       onClose();
     }
   };
 
-  // 3. Timeout de seguridad
   useEffect(() => {
     const paymentTimeout = setTimeout(() => {
       if (!isPaymentFinalized.current) {
@@ -82,20 +102,14 @@ const PayPalCheckout = ({ amount, onPaymentSuccess, onClose }) => {
         Alert.alert('Error', 'El pago tardó demasiado en completarse');
         onClose();
       }
-    }, 45000); // 45 segundos
-
+    }, 45000);
     return () => clearTimeout(paymentTimeout);
-  }, []);
+  }, [onClose]);
 
-  // 4. Renderizado
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator 
-          size="large" 
-          color="#00457C"
-          style={styles.loader}
-        />
+        <ActivityIndicator size="large" color="#00457C" style={styles.loader} />
       ) : (
         <WebView
           ref={webViewRef}
@@ -115,11 +129,7 @@ const PayPalCheckout = ({ amount, onPaymentSuccess, onClose }) => {
           incognito={true}
           startInLoadingState={true}
           renderLoading={() => (
-            <ActivityIndicator 
-              size="large" 
-              color="#00457C" 
-              style={styles.loader}
-            />
+            <ActivityIndicator size="large" color="#00457C" style={styles.loader} />
           )}
         />
       )}
@@ -127,24 +137,21 @@ const PayPalCheckout = ({ amount, onPaymentSuccess, onClose }) => {
   );
 };
 
-// Estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'white',
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    overflow: "hidden",
   },
   webview: {
     flex: 1,
-    marginTop: 15,
-    opacity: 1, // Asegurar visibilidad
   },
   loader: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });
 
 export default PayPalCheckout;

@@ -4,6 +4,8 @@ const cors = require('cors');
 const axios = require('axios');
 
 const app = express();
+const URL = 'http://192.168.0.166'; // CAMBIAR LA IP A LA DE TU COMPUTADORA
+
 
 // Configuración de middlewares
 app.use(cors());
@@ -14,6 +16,15 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+app.get('/checkout/complete', (req, res) => {
+  res.send('Pago completado, puede cerrar esta ventana.');
+});
+
+app.get('/checkout/cancel', (req, res) => {
+  res.send('Pago cancelado, puede cerrar esta ventana.');
+});
+
 
 // Función para obtener token de PayPal
 const getPayPalAccessToken = async () => {
@@ -64,7 +75,11 @@ app.post('/create-payment', async (req, res) => {
             currency_code: 'MXN',
             value: Number(amount).toFixed(2)
           }
-        }]
+        }],
+        application_context: {
+          return_url: `${URL}:3001/checkout/complete`, // URL a la que redirige PayPal en caso de éxito
+          cancel_url: `${URL}:3001/checkout/cancel`    // URL en caso de cancelación
+        }
       },
       {
         headers: {
@@ -73,6 +88,7 @@ app.post('/create-payment', async (req, res) => {
         }
       }
     );
+    
 
     console.log('[Create Payment] Orden creada:', response.data.id);
     const approvalLink = response.data.links.find(link => link.rel === 'approve');
@@ -111,8 +127,38 @@ app.post('/execute-payment', async (req, res) => {
       }
     );
 
-    console.log('[Execute Payment] Pago completado:', response.data.id);
-    res.json({ success: true, data: response.data });
+    const captureData = response.data;
+    // Extraer el total de forma segura desde la primera unidad de compra
+    let total = null;
+    if (
+      captureData.purchase_units &&
+      captureData.purchase_units.length > 0 &&
+      captureData.purchase_units[0].payments &&
+      captureData.purchase_units[0].payments.captures &&
+      captureData.purchase_units[0].payments.captures.length > 0
+    ) {
+      total = captureData.purchase_units[0].payments.captures[0].amount?.value;
+    }
+    
+    if (!total) {
+      throw new Error("No se pudo extraer el total de la transacción");
+    }
+    
+    // Extraer el correo del comprador
+    const payerEmail = captureData.payer?.email_address || null;
+    
+    console.log('[Execute Payment] Pago completado:', captureData.id);
+    // Devolver un objeto plano con las propiedades necesarias
+    res.json({ 
+      success: true, 
+      data: { 
+        id: captureData.id, 
+        total, 
+        payer_email: payerEmail,
+        // Se pueden incluir otras propiedades relevantes si se requiere
+        ...captureData 
+      } 
+    });
 
   } catch (error) {
     console.error('[Execute Payment] Error:', {
@@ -124,6 +170,7 @@ app.post('/execute-payment', async (req, res) => {
   }
 });
 
+
 // Manejo de errores global
 app.use((err, req, res, next) => {
   console.error('[Global Error]', err);
@@ -132,7 +179,7 @@ app.use((err, req, res, next) => {
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`=================================`);
   console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
   console.log(`🔑 PayPal Client ID: ${process.env.PAYPAL_CLIENT_ID ? 'Configurado' : 'NO CONFIGURADO'}`);

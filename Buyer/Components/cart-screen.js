@@ -294,42 +294,47 @@ const CartScreen = () => {
             Alert.alert("Error", "Your cart is empty");
             return;
           }
-          
+      
+          // Extraer los detalles de pago
+          const details = paymentDetails.data ? paymentDetails.data : paymentDetails;
+          console.log("Detalles de pago:", details);
+      
           // Obtener datos del comprador desde Firebase
           const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
           const userData = userDoc.data();
-    
+      
           // Crear órdenes por vendedor
           const itemsByVendor = groupItemsByVendor();
-          
+      
           for (const vendorEmail in itemsByVendor) {
             const vendorItems = itemsByVendor[vendorEmail];
             const vendorTotal = vendorItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            
+      
             await createOrder({
               vendorEmail,
               vendorItems,
               vendorTotal,
               paymentMethod: "PayPal",
               paymentDetails: {
-                transactionId: paymentDetails.id,
-                payerEmail: paymentDetails.payer_email,
-                amount: paymentDetails.amount.total
+                transactionId: details.id,                        // ID de la transacción
+                payerEmail: details.payer?.email_address,         // Extraemos el correo desde details.payer.email_address
+                amount: details.total                             // Monto total
               }
             });
           }
-    
+      
           // Limpiar carrito y mostrar confirmación
           await clearCart();
           showSuccessAlert();
-          
+      
         } catch (error) {
           console.error("Error procesando pago PayPal:", error);
           Alert.alert("Error", "No se pudo completar la transacción");
         } finally {
           setProcessingPayment(false);
         }
-    };
+      };
+      
 
     // Nuevas funciones auxiliares
     const groupItemsByVendor = () => {
@@ -625,6 +630,7 @@ const CartScreen = () => {
                                     amount={totalPrice}
                                     onPaymentSuccess={handlePayPalPaymentSuccess}
                                     onPaymentError={handlePayPalPaymentError}
+                                    onClose={() => console.log('Pago cancelado o ventana cerrada')}
                                 />
                             </View>
                     
@@ -867,7 +873,15 @@ const styles = StyleSheet.create({
     },
     methodButton: {
         marginVertical: 10,
-        backgroundColor: "#6bb2db",
+        backgroundColor: "#2c3e50", // Color más oscuro para mejor contraste
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    methodButtonText: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+        fontSize: 16,
     },
     cancelButton: {
         marginVertical: 10,
@@ -894,16 +908,24 @@ const styles = StyleSheet.create({
         marginVertical: 12,
         backgroundColor: 'white',
         elevation: 3,
+        borderWidth: 1,
+        borderColor: "#6bb2db", // Agregado un borde para resaltar el WebView
     },
+
     paypalBackButton: {
         alignSelf: "center",
         marginTop: 20,
         width: "90%",
         borderColor: "#6bb2db",
+        borderWidth: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: "center",
     },
     paypalBackButtonText: {
         color: "#6bb2db",
         fontWeight: "600",
+        fontSize: 16,
     },
     paypalModalTitle: {
         fontSize: 20,
