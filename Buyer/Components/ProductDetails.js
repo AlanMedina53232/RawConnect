@@ -21,7 +21,7 @@ import { addDoc, auth, collection, db, doc, getDocs, query, updateDoc, where } f
 const { width } = Dimensions.get("window")
 
 const COLORS = {
-    primary: "#0D47A1",
+    primary: "#2c3e50",
     secondary: "#1976D2",
     accent: "#2196F3",
     white: "#FFFFFF",
@@ -281,28 +281,25 @@ export default function ProductDetails({ route, navigation }) {
                     </View>
 
                     {/* Stock Status Card */}
-                    <Card style={[styles.stockCard, { borderLeftColor: getStockColor() }]}>
+                    <Card style={[styles.stockCard, { borderLeftColor: "#2C3E50", backgroundColor: "#f9fbfc" }]}>
                         <Card.Content style={styles.stockCardContent}>
                             <View style={styles.stockInfo}>
                                 <MaterialCommunityIcons
-                                    name={
-                                        stockStatus === "high"
-                                            ? "package-variant-plus"
-                                            : stockStatus === "medium"
-                                                ? "package-variant"
-                                                : "package-variant-minus"
-                                    }
+                                    name="storefront" // Cambia este icono por el que prefieras
                                     size={24}
-                                    color={getStockColor()}
+                                    color="#2C3E50"
                                 />
                                 <View style={styles.stockTextContainer}>
-                                    <Text style={[styles.stockQuantity, { color: getStockColor() }]}>
+                                    <Text style={[styles.stockQuantity, { color: "#2C3E50" }]}>
                                         {product.quantity ? `${product.quantity} ${getUnitLabel()} available` : "Stock not specified"}
                                     </Text>
                                 </View>
                             </View>
                         </Card.Content>
                     </Card>
+
+
+
 
                     <View style={styles.dateContainer}>
                         <Ionicons name="calendar-outline" size={16} color={COLORS.textLight} />
