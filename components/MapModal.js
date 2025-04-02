@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Modal, View, Button, StyleSheet } from "react-native";
-import MapView, { Marker } from "react-native-maps"; // Asegúrate de que se importa correctamente MapView
+import MapView, { Marker, UrlTile } from "react-native-maps";
 
 const MapModal = ({ isVisible, onClose, onLocationSelect }) => {
   const [position, setPosition] = useState({
@@ -27,6 +27,15 @@ const MapModal = ({ isVisible, onClose, onLocationSelect }) => {
           }}
           onPress={handlePress}
         >
+          {/* Cargar tiles de OpenStreetMap */}
+          <UrlTile
+            /**
+             * OpenStreetMap tiene varios servidores; este es uno de ellos.
+             * Puedes cambiarlo o configurar varios servidores si es necesario.
+             */
+            urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maximumZ={19}
+          />
           <Marker coordinate={position} />
         </MapView>
         <Button title="Cerrar" onPress={onClose} />
@@ -38,7 +47,7 @@ const MapModal = ({ isVisible, onClose, onLocationSelect }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Fondo oscuro con transparencia
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "center",
     alignItems: "center",
   },

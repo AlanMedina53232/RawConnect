@@ -11,7 +11,7 @@ const MyOrdersScreen = () => {
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
-    const [userRole, setUserRole] = useState(null) // 1 for buyer, 2 for producer
+    const [userRole, setUserRole] = useState(null)
 
     useEffect(() => {
         checkUserRole()
@@ -38,11 +38,11 @@ const MyOrdersScreen = () => {
                 const role = roleDoc.docs[0].data().role
                 setUserRole(role)
             } else {
-                setUserRole(1)
+                setUserRole(1) // Default to buyer role
             }
         } catch (error) {
             console.error("Error checking user role:", error)
-            setUserRole(1)
+            setUserRole(1) // Fallback to buyer role
         }
     }
 
@@ -56,22 +56,22 @@ const MyOrdersScreen = () => {
             }
 
             const userEmail = auth.currentUser.email
-            let ordersQuery
-
-            if (userRole === 1) {
-                ordersQuery = query(collection(db, "orders"), where("buyerEmail", "==", userEmail))
-            } else {
-                ordersQuery = query(collection(db, "orders"), where("vendorEmail", "==", userEmail))
-            }
+            let ordersQuery = userRole === 1 
+                ? query(collection(db, "orders"), where("buyerEmail", "==", userEmail))
+                : query(collection(db, "orders"), where("vendorEmail", "==", userEmail))
 
             const querySnapshot = await getDocs(ordersQuery)
             const ordersList = []
 
             querySnapshot.forEach((doc) => {
+                const data = doc.data()
                 ordersList.push({
                     id: doc.id,
-                    ...doc.data(),
-                    createdAt: doc.data().createdAt?.toDate() || new Date(),
+                    ...data,
+                    items: data.items || [], // Ensure items is always an array
+                    createdAt: data.createdAt?.toDate() || new Date(),
+                    totalAmount: data.totalAmount || 0,
+                    status: data.status || "pending"
                 })
             })
 
@@ -98,9 +98,11 @@ const MyOrdersScreen = () => {
                 updatedAt: new Date(),
             })
 
-            setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
+            setOrders(orders.map(order => 
+                order.id === orderId ? { ...order, status: newStatus } : order
+            ))
 
-            Alert.alert("Success", `Order ${newStatus}`)
+            Alert.alert("Success", `Order marked as ${newStatus}`)
         } catch (error) {
             console.error("Error updating order status:", error)
             Alert.alert("Error", "Failed to update order status")
@@ -108,24 +110,16 @@ const MyOrdersScreen = () => {
     }
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case "pending":
-                return "#FFC107"
-            case "accepted":
-                return "#2196F3"
-            case "shipped":
-                return "#6bb2db"
-            case "delivered":
-                return "#673AB7"
-            case "finalized":
-                return "#4CAF50"
-            case "not_received":
-                return "#F44336"
-            case "cancelled":
-                return "#F44336"
-            default:
-                return "#9E9E9E"
+        const statusColors = {
+            pending: "#FFC107",
+            accepted: "#2196F3",
+            shipped: "#6bb2db",
+            delivered: "#673AB7",
+            finalized: "#4CAF50",
+            not_received: "#F44336",
+            cancelled: "#F44336"
         }
+        return statusColors[status] || "#9E9E9E"
     }
 
     const formatDate = (date) => {
@@ -137,90 +131,85 @@ const MyOrdersScreen = () => {
     }
 
     const renderOrderActions = (order) => {
-        if (userRole === 2) {
-            // Producer actions
-            switch (order.status) {
-                case "pending":
-                    return (
-                        <View style={styles.actionButtons}>
-                            <Button
-                                mode="contained"
-                                style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
-                                onPress={() => handleUpdateOrderStatus(order.id, "accepted")}
-                            >
-                                Accept
-                            </Button>
-                            <Button
-                                mode="contained"
-                                style={[styles.actionButton, { backgroundColor: "#F44336" }]}
-                                onPress={() => handleUpdateOrderStatus(order.id, "cancelled")}
-                            >
-                                Decline
-                            </Button>
-                        </View>
-                    )
-                case "accepted":
-                    return (
-                        <Button
-                            mode="contained"
-                            style={[styles.actionButton, { backgroundColor: "#6bb2db" }]}
-                            onPress={() => handleUpdateOrderStatus(order.id, "shipped")}
-                        >
-                            Mark as Shipped
-                        </Button>
-                    )
-                case "shipped":
-                    return (
-                        <Button
-                            mode="contained"
-                            style={[styles.actionButton, { backgroundColor: "#673AB7" }]}
-                            onPress={() => handleUpdateOrderStatus(order.id, "delivered")}
-                        >
-                            Mark as Delivered
-                        </Button>
-                    )
-                default:
-                    return null
-            }
-        } else {
-            // Buyer actions
-            switch (order.status) {
-                case "delivered":
-                    return (
-                        <View style={styles.deliveredActions}>
-                            <Button
-                                mode="contained"
-                                style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
-                                onPress={() => handleUpdateOrderStatus(order.id, "finalized")}
-                            >
-                                Confirm Delivery
-                            </Button>
-                            <Button
-                                mode="outlined"
-                                style={[styles.actionButton, { borderColor: "#F44336" }]}
-                                textColor="#F44336"
-                                onPress={() => handleUpdateOrderStatus(order.id, "not_received")}
-                            >
-                                Not Received
-                            </Button>
-                        </View>
-                    )
-                case "cancelled":
-                case "finalized":
-                case "not_received":
-                    return null
-                default:
-                    return (
-                        <Button
-                            mode="outlined"
-                            style={styles.cancelButton}
-                            onPress={() => handleUpdateOrderStatus(order.id, "cancelled")}
-                        >
-                            Cancel Order
-                        </Button>
-                    )
-            }
+        if (!order.status) return null
+
+        const producerActions = {
+            pending: (
+                <View style={styles.actionButtons}>
+                    <Button
+                        mode="contained"
+                        style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
+                        onPress={() => handleUpdateOrderStatus(order.id, "accepted")}
+                    >
+                        Accept
+                    </Button>
+                    <Button
+                        mode="contained"
+                        style={[styles.actionButton, { backgroundColor: "#F44336" }]}
+                        onPress={() => handleUpdateOrderStatus(order.id, "cancelled")}
+                    >
+                        Decline
+                    </Button>
+                </View>
+            ),
+            accepted: (
+                <Button
+                    mode="contained"
+                    style={[styles.actionButton, { backgroundColor: "#6bb2db" }]}
+                    onPress={() => handleUpdateOrderStatus(order.id, "shipped")}
+                >
+                    Mark as Shipped
+                </Button>
+            ),
+            shipped: (
+                <Button
+                    mode="contained"
+                    style={[styles.actionButton, { backgroundColor: "#673AB7" }]}
+                    onPress={() => handleUpdateOrderStatus(order.id, "delivered")}
+                >
+                    Mark as Delivered
+                </Button>
+            )
         }
+
+        const buyerActions = {
+            delivered: (
+                <View style={styles.deliveredActions}>
+                    <Button
+                        mode="contained"
+                        style={[styles.actionButton, { backgroundColor: "#4CAF50" }]}
+                        onPress={() => handleUpdateOrderStatus(order.id, "finalized")}
+                    >
+                        Confirm Delivery
+                    </Button>
+                    <Button
+                        mode="outlined"
+                        style={[styles.actionButton, { borderColor: "#F44336" }]}
+                        textColor="#F44336"
+                        onPress={() => handleUpdateOrderStatus(order.id, "not_received")}
+                    >
+                        Not Received
+                    </Button>
+                </View>
+            ),
+            default: (
+                <Button
+                    mode="outlined"
+                    style={styles.cancelButton}
+                    onPress={() => handleUpdateOrderStatus(order.id, "cancelled")}
+                >
+                    Cancel Order
+                </Button>
+            )
+        }
+
+        return userRole === 2 
+            ? producerActions[order.status] 
+            : order.status === "delivered" 
+                ? buyerActions.delivered 
+                : ["cancelled", "finalized", "not_received"].includes(order.status) 
+                    ? null 
+                    : buyerActions.default
     }
 
     const renderEmptyOrders = () => (
@@ -234,6 +223,17 @@ const MyOrdersScreen = () => {
                     Start Shopping
                 </Button>
             )}
+        </View>
+    )
+
+    const renderOrderItem = (item, index) => (
+        <View key={`${item.productId || index}`} style={styles.itemRow}>
+            <Text style={styles.itemName}>
+                {item.quantity || 1} x {item.productName || "Unknown Product"}
+            </Text>
+            <Text style={styles.itemPrice}>
+                ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+            </Text>
         </View>
     )
 
@@ -268,32 +268,23 @@ const MyOrdersScreen = () => {
                                         style={[styles.statusChip, { backgroundColor: getStatusColor(order.status) }]}
                                         textStyle={styles.statusText}
                                     >
-                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
+                                        {order.status?.charAt(0).toUpperCase() + order.status?.slice(1).replace('_', ' ') || "Unknown"}
                                     </Chip>
                                 </View>
 
                                 <Divider style={styles.divider} />
 
                                 <View style={styles.orderDetails}>
-                                    {userRole === 1 ? (
-                                        <Text style={styles.vendorText}>Seller: {order.vendorEmail}</Text>
-                                    ) : (
-                                        <Text style={styles.vendorText}>Buyer: {order.buyerEmail}</Text>
-                                    )}
+                                    <Text style={styles.vendorText}>
+                                        {userRole === 1 ? `Seller: ${order.vendorEmail || "Unknown"}` : `Buyer: ${order.buyerEmail || "Unknown"}`}
+                                    </Text>
 
                                     <Text style={styles.itemsTitle}>Items:</Text>
-                                    {order.items.map((item, index) => (
-                                        <View key={index} style={styles.itemRow}>
-                                            <Text style={styles.itemName}>
-                                                {item.quantity} x {item.productName}
-                                            </Text>
-                                            <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
-                                        </View>
-                                    ))}
+                                    {(order.items || []).map(renderOrderItem)}
 
                                     <View style={styles.totalRow}>
                                         <Text style={styles.totalLabel}>Total</Text>
-                                        <Text style={styles.totalValue}>${order.totalAmount.toFixed(2)}</Text>
+                                        <Text style={styles.totalValue}>${order.totalAmount?.toFixed(2) || "0.00"}</Text>
                                     </View>
                                 </View>
 
