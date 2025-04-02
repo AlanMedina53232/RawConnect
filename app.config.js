@@ -17,6 +17,7 @@ export default {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.amedina53.rawconnect",  // Aquí está correctamente definido
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo2.png",
         "backgroundColor": "#ffffff"
@@ -25,13 +26,17 @@ export default {
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    extra: {
+    "extra": {
       apiKey: process.env.API_KEY,
       authDomain: process.env.AUTH_DOMAIN,
       projectId: process.env.PROJECT_ID,
       storageBucket: process.env.STORAGE_BUCKET,
       messagingSenderId: process.env.MESSAGING_SENDER_ID,
       appId: process.env.APP_ID,
+
+      "eas": {
+        "projectId": "b63c7a4d-96e4-4f52-ad6f-ad59d2070237"
+      }
     }
   }
 }

@@ -21,12 +21,12 @@
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/stack": "^7.1.1",
     "@types/react": "^18.3.20",
-    "@types/react-native": "^0.72.8",
     "add": "^2.0.6",
     "axios": "^1.8.4",
     "date-and-time": "^3.6.0",
     "dotenv": "^16.4.7",
-    "expo": "~52.0.41",
+    "eas-cli": "^16.1.0",
+    "expo": "~52.0.42",
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "^14.0.2",
     "expo-status-bar": "~2.0.1",
@@ -37,11 +37,10 @@
     "lodash.template": "^4.5.0",
     "native-base": "^3.4.28",
     "normalize-css-color": "^1.0.2",
-    "npm": "^11.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-leaflet": "^5.0.0",
-    "react-native": "0.76.7",
+    "react-native": "0.76.8",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-maps": "1.18.0",
     "react-native-mask-text": "^0.14.2",
@@ -55,8 +54,15 @@
     "react-native-tab-view": "^4.0.5",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5",
-    "yarn": "^1.22.22"
+    "react-native-webview": "13.12.5"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": ["react-native-maps", "react-native-masked-text"],
+        "listUnknownPackages": false
+      }
+    }
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
