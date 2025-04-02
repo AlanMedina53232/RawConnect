@@ -29,6 +29,7 @@ import {
     updateDoc,
     where,
 } from "../../config/fb"
+import PayPalCheckout from "./PayPalCheckout";
 
 const CartScreen = () => {
     const navigation = useNavigation()
@@ -36,6 +37,8 @@ const CartScreen = () => {
     const [loading, setLoading] = useState(true)
     const [totalPrice, setTotalPrice] = useState(0)
     const [checkoutModalVisible, setCheckoutModalVisible] = useState(false)
+    // Estado para seleccionar el método de pago: null, "card" o "paypal"
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
     const [paymentInfo, setPaymentInfo] = useState({
         cardNumber: "",
         cardHolder: "",
@@ -47,55 +50,50 @@ const CartScreen = () => {
     const [errors, setErrors] = useState({})
     const [processingPayment, setProcessingPayment] = useState(false)
 
+    // Funciones de manejo de pago (éxito y cancelación)
+    const handlePaymentSuccess = () => {
+        setCartItems([])
+        Alert.alert('Éxito', 'Tu pedido ha sido realizado.')
+    };
+
+    const handlePaymentCancel = () => {
+        console.log('Pago cancelado')
+    };
+
     useEffect(() => {
         fetchCartItems()
         fetchSavedCardInfo()
-
-        // Añadir un listener para cuando la pantalla recibe el foco
         const unsubscribeFocus = navigation.addListener("focus", () => {
             fetchCartItems()
             fetchSavedCardInfo()
         })
-
-        // Limpiar el listener cuando el componente se desmonta
         return unsubscribeFocus
     }, [navigation])
 
     useEffect(() => {
-        // Calculate total price whenever cart items change
-        const total = cartItems.reduce((sum, item) => {
-            return sum + item.price * item.quantity
-        }, 0)
+        const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
         setTotalPrice(total)
     }, [cartItems])
 
     const fetchSavedCardInfo = async () => {
         try {
             if (!auth.currentUser) return
-
             const userEmail = auth.currentUser.email
             const cardDocRef = doc(db, "userPaymentMethods", userEmail)
             const cardDoc = await getDoc(cardDocRef)
-
             if (cardDoc.exists()) {
                 const cardData = cardDoc.data()
                 setSavedCard(cardData)
-
-                // Pre-fill the form with saved data except CVV
-                if (cardData) {
-                    setPaymentInfo({
-                        cardNumber: cardData.cardNumber || "",
-                        cardHolder: cardData.cardHolder || "",
-                        expiryDate: cardData.expiryDate || "",
-                        cvv: "", // CVV nunca se guarda por seguridad
-                    })
-                    setUseStoredCard(true)
-                }
+                setPaymentInfo({
+                    cardNumber: cardData.cardNumber || "",
+                    cardHolder: cardData.cardHolder || "",
+                    expiryDate: cardData.expiryDate || "",
+                    cvv: "",
+                })
+                setUseStoredCard(true)
             } else {
                 setSavedCard(null)
                 setUseStoredCard(false)
-
-                // Reset payment info if no saved card
                 setPaymentInfo({
                     cardNumber: "",
                     cardHolder: "",
@@ -118,20 +116,14 @@ const CartScreen = () => {
                 navigation.navigate("Login")
                 return
             }
-
             const userEmail = auth.currentUser.email
             const cartQuery = query(collection(db, "cart"), where("userEmail", "==", userEmail))
-
             const querySnapshot = await getDocs(cartQuery)
             const items = []
-
             querySnapshot.forEach((doc) => {
-                items.push({
-                    id: doc.id,
-                    ...doc.data(),
-                })
+                items.push({ id: doc.id, ...doc.data() })
             })
-
+            console.log("Cart items fetched:", items.length)
             setCartItems(items)
         } catch (error) {
             console.error("Error fetching cart items:", error)
@@ -144,7 +136,6 @@ const CartScreen = () => {
     const handleRemoveItem = async (itemId) => {
         try {
             await deleteDoc(doc(db, "cart", itemId))
-            // Update local state
             setCartItems(cartItems.filter((item) => item.id !== itemId))
             Alert.alert("Success", "Item removed from cart")
         } catch (error) {
@@ -155,30 +146,17 @@ const CartScreen = () => {
 
     const handleUpdateQuantity = async (itemId, newQuantity) => {
         if (newQuantity < 1) return
-
         try {
             const itemIndex = cartItems.findIndex((item) => item.id === itemId)
             if (itemIndex === -1) return
-
             const item = cartItems[itemIndex]
-
-            // Check if new quantity exceeds available stock
             if (newQuantity > item.productStock) {
                 Alert.alert("Error", `Only ${item.productStock} units available in stock`)
                 return
             }
-
-            // Update in Firestore
-            await updateDoc(doc(db, "cart", itemId), {
-                quantity: newQuantity,
-            })
-
-            // Update local state
+            await updateDoc(doc(db, "cart", itemId), { quantity: newQuantity })
             const updatedItems = [...cartItems]
-            updatedItems[itemIndex] = {
-                ...item,
-                quantity: newQuantity,
-            }
+            updatedItems[itemIndex] = { ...item, quantity: newQuantity }
             setCartItems(updatedItems)
         } catch (error) {
             console.error("Error updating quantity:", error)
@@ -188,29 +166,23 @@ const CartScreen = () => {
 
     const validatePaymentInfo = () => {
         const newErrors = {}
-
         if (useStoredCard) {
-            // Si usa tarjeta guardada, solo validar CVV
             if (!paymentInfo.cvv.trim() || paymentInfo.cvv.length < 3) {
                 newErrors.cvv = "Please enter a valid CVV"
             }
         } else {
-            // Validación completa para nueva tarjeta
             if (!paymentInfo.cardNumber.trim() || paymentInfo.cardNumber.length < 16) {
                 newErrors.cardNumber = "Please enter a valid 16-digit card number"
             }
-
             if (!paymentInfo.cardHolder.trim()) {
                 newErrors.cardHolder = "Please enter the cardholder name"
             }
-
             if (!paymentInfo.expiryDate.trim() || !paymentInfo.expiryDate.includes("/")) {
                 newErrors.expiryDate = "Please enter a valid expiry date (MM/YY)"
             } else {
                 const [month, year] = paymentInfo.expiryDate.split("/")
                 const currentYear = new Date().getFullYear() % 100
                 const currentMonth = new Date().getMonth() + 1
-
                 if (
                     Number.parseInt(year) < currentYear ||
                     (Number.parseInt(year) === currentYear && Number.parseInt(month) < currentMonth) ||
@@ -220,12 +192,10 @@ const CartScreen = () => {
                     newErrors.expiryDate = "Card has expired or date is invalid"
                 }
             }
-
             if (!paymentInfo.cvv.trim() || paymentInfo.cvv.length < 3) {
                 newErrors.cvv = "Please enter a valid CVV"
             }
         }
-
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -233,11 +203,8 @@ const CartScreen = () => {
     const saveCardInformation = async () => {
         try {
             if (!auth.currentUser) return
-
             const userEmail = auth.currentUser.email
             const cardDocRef = doc(db, "userPaymentMethods", userEmail)
-
-            // Guardar información de la tarjeta excepto el CVV
             await setDoc(cardDocRef, {
                 cardNumber: paymentInfo.cardNumber,
                 cardHolder: paymentInfo.cardHolder,
@@ -245,30 +212,24 @@ const CartScreen = () => {
                 lastFour: paymentInfo.cardNumber.slice(-4),
                 updatedAt: new Date(),
             })
-
-            
+            console.log("Card information saved successfully")
         } catch (error) {
             console.error("Error saving card information:", error)
         }
     }
 
+    // Método para pago con tarjeta
     const handleCheckout = async () => {
         if (!validatePaymentInfo()) return
-
         try {
             setProcessingPayment(true)
-
             if (cartItems.length === 0) {
                 Alert.alert("Error", "Your cart is empty")
                 return
             }
-
-            // Si no está usando una tarjeta guardada, guardar la información de la tarjeta
             if (!useStoredCard) {
                 await saveCardInformation()
             }
-
-            // Group items by vendor
             const itemsByVendor = {}
             cartItems.forEach((item) => {
                 if (!itemsByVendor[item.vendorEmail]) {
@@ -276,13 +237,9 @@ const CartScreen = () => {
                 }
                 itemsByVendor[item.vendorEmail].push(item)
             })
-
-            // Create an order for each vendor
             for (const vendorEmail in itemsByVendor) {
                 const vendorItems = itemsByVendor[vendorEmail]
                 const vendorTotal = vendorItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-
-                // Create order in Firestore
                 await addDoc(collection(db, "orders"), {
                     buyerEmail: auth.currentUser.email,
                     vendorEmail: vendorEmail,
@@ -297,41 +254,30 @@ const CartScreen = () => {
                     status: "pending",
                     paymentMethod: "Credit Card",
                     createdAt: new Date(),
-                    // Store last 4 digits of card for reference
                     paymentDetails: {
                         cardLast4: useStoredCard ? savedCard.lastFour : paymentInfo.cardNumber.slice(-4),
                         cardHolder: useStoredCard ? savedCard.cardHolder : paymentInfo.cardHolder,
                     },
                 })
-
-                // Update product stock in Firestore
                 for (const item of vendorItems) {
                     const productRef = doc(db, "products", item.productId)
-                    await updateDoc(productRef, {
-                        quantity: item.productStock - item.quantity,
-                    })
+                    await updateDoc(productRef, { quantity: item.productStock - item.quantity })
                 }
             }
-
-            // Clear cart after successful order
             for (const item of cartItems) {
                 await deleteDoc(doc(db, "cart", item.id))
             }
-
-            // Actualizar el estado local inmediatamente
             setCartItems([])
             setCheckoutModalVisible(false)
-
-            Alert.alert("Order Placed Successfully", "Your order has been placed and is pending approval from the vendor.", [
-                {
-                    text: "View My Orders",
-                    onPress: () => navigation.navigate("MyOrders"),
-                },
-                {
-                    text: "Continue Shopping",
-                    onPress: () => navigation.navigate("Home"),
-                },
-            ])
+            setSelectedPaymentMethod(null)
+            Alert.alert(
+                "Order Placed Successfully",
+                "Your order has been placed and is pending approval from the vendor.",
+                [
+                    { text: "View My Orders", onPress: () => navigation.navigate("MyOrders") },
+                    { text: "Continue Shopping", onPress: () => navigation.navigate("Home") },
+                ]
+            )
         } catch (error) {
             console.error("Error processing checkout:", error)
             Alert.alert("Error", "Failed to process your order. Please try again.")
@@ -340,31 +286,132 @@ const CartScreen = () => {
         }
     }
 
-    const formatCardNumber = (text) => {
-        // Remove all non-digit characters
-        const cleaned = text.replace(/\D/g, "")
-        // Limit to 16 digits
-        const trimmed = cleaned.substring(0, 16)
-        // Format with spaces every 4 digits
-        const formatted = trimmed.replace(/(\d{4})(?=\d)/g, "$1 ")
+    // Método para pago con PayPal
+    const handlePayPalPaymentSuccess = async (paymentDetails) => {
+        try {
+          setProcessingPayment(true);
+          if (cartItems.length === 0) {
+            Alert.alert("Error", "Your cart is empty");
+            return;
+          }
+      
+          // Extraer los detalles de pago
+          const details = paymentDetails.data ? paymentDetails.data : paymentDetails;
+          console.log("Detalles de pago:", details);
+      
+          // Obtener datos del comprador desde Firebase
+          const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+          const userData = userDoc.data();
+      
+          // Crear órdenes por vendedor
+          const itemsByVendor = groupItemsByVendor();
+      
+          for (const vendorEmail in itemsByVendor) {
+            const vendorItems = itemsByVendor[vendorEmail];
+            const vendorTotal = vendorItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      
+            await createOrder({
+              vendorEmail,
+              vendorItems,
+              vendorTotal,
+              paymentMethod: "PayPal",
+              paymentDetails: {
+                transactionId: details.id,                        // ID de la transacción
+                payerEmail: details.payer?.email_address,         // Extraemos el correo desde details.payer.email_address
+                amount: details.total                             // Monto total
+              }
+            });
+          }
+      
+          // Limpiar carrito y mostrar confirmación
+          await clearCart();
+          showSuccessAlert();
+      
+        } catch (error) {
+          console.error("Error procesando pago PayPal:", error);
+          Alert.alert("Error", "No se pudo completar la transacción");
+        } finally {
+          setProcessingPayment(false);
+        }
+      };
+      
 
+    // Nuevas funciones auxiliares
+    const groupItemsByVendor = () => {
+        return cartItems.reduce((acc, item) => {
+        if (!acc[item.vendorEmail]) acc[item.vendorEmail] = [];
+        acc[item.vendorEmail].push(item);
+        return acc;
+        }, {});
+    };
+
+    const createOrder = async (orderData) => {
+        const orderRef = await addDoc(collection(db, "orders"), {
+        buyerId: auth.currentUser.uid,
+        buyerEmail: auth.currentUser.email,
+        ...orderData,
+        status: "pending",
+        createdAt: new Date(),
+        });
+
+        // Actualizar inventario
+        await Promise.all(orderData.vendorItems.map(async (item) => {
+        const productRef = doc(db, "products", item.productId);
+        await updateDoc(productRef, {
+            quantity: item.productStock - item.quantity
+        });
+        }));
+
+        return orderRef;
+    };
+
+    const clearCart = async () => {
+        await Promise.all(cartItems.map(item => 
+        deleteDoc(doc(db, "cart", item.id))
+        ));
+        setCartItems([]);
+    };
+
+    const showSuccessAlert = () => {
+        setCheckoutModalVisible(false);
+        Alert.alert(
+        "¡Pago exitoso!",
+        "Tu orden ha sido procesada correctamente",
+        [
+            { 
+            text: "Ver órdenes", 
+            onPress: () => navigation.navigate("MyOrders") 
+            },
+            { 
+            text: "Seguir comprando", 
+            onPress: () => navigation.navigate("Home") 
+            }
+        ]
+        );
+    };
+
+    const handlePayPalPaymentError = (error) => {
+        Alert.alert("Payment Error", "An error occurred during the PayPal payment. Please try again.")
+        console.error("PayPal Payment Error:", error)
+    };
+
+    const formatCardNumber = (text) => {
+        const cleaned = text.replace(/\D/g, "")
+        const trimmed = cleaned.substring(0, 16)
+        const formatted = trimmed.replace(/(\d{4})(?=\d)/g, "$1 ")
         setPaymentInfo({ ...paymentInfo, cardNumber: formatted })
-    }
+    };
 
     const formatExpiryDate = (text) => {
-        // Remove all non-digit characters
         const cleaned = text.replace(/\D/g, "")
-        // Limit to 4 digits
         const trimmed = cleaned.substring(0, 4)
-
-        // Format as MM/YY
         if (trimmed.length > 2) {
             const formatted = `${trimmed.substring(0, 2)}/${trimmed.substring(2)}`
             setPaymentInfo({ ...paymentInfo, expiryDate: formatted })
         } else {
             setPaymentInfo({ ...paymentInfo, expiryDate: trimmed })
         }
-    }
+    };
 
     const renderEmptyCart = () => (
         <View style={styles.emptyCartContainer}>
@@ -374,12 +421,12 @@ const CartScreen = () => {
                 Start Shopping
             </Button>
         </View>
-    )
+    );
 
     const toggleUseStoredCard = () => {
         setUseStoredCard(!useStoredCard)
         setErrors({})
-    }
+    };
 
     if (loading) {
         return (
@@ -387,7 +434,7 @@ const CartScreen = () => {
                 <ActivityIndicator size="large" color="#6bb2db" />
                 <Text style={styles.loadingText}>Loading your cart...</Text>
             </View>
-        )
+        );
     }
 
     return (
@@ -419,7 +466,6 @@ const CartScreen = () => {
                                         <Text style={styles.productName}>{item.productName}</Text>
                                         <Text style={styles.productVendor}>Seller: {item.vendorEmail}</Text>
                                         <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-
                                         <View style={styles.quantityContainer}>
                                             <TouchableOpacity
                                                 style={styles.quantityButton}
@@ -475,137 +521,129 @@ const CartScreen = () => {
             <Portal>
                 <Modal
                     visible={checkoutModalVisible}
-                    onDismiss={() => setCheckoutModalVisible(false)}
+                    onDismiss={() => {
+                        setCheckoutModalVisible(false)
+                        setSelectedPaymentMethod(null)
+                    }}
                     contentContainerStyle={styles.modalContainer}
                 >
-                    <ScrollView>
-                        <Text style={styles.modalTitle}>Payment Information</Text>
-                        <Text style={styles.modalSubtitle}>Enter your card details to complete your purchase</Text>
-
-                        <View style={styles.cardIconsContainer}>
-                            <Icon name="credit-card" size={24} color="#6bb2db" style={styles.cardIcon} />
-                            <Icon name="credit-card-outline" size={24} color="#6bb2db" style={styles.cardIcon} />
-                            <Icon name="credit-card-multiple" size={24} color="#6bb2db" style={styles.cardIcon} />
-                        </View>
-
-                        {savedCard && (
-                            <Card style={styles.savedCardContainer}>
-                                <Card.Content>
-                                    <View style={styles.savedCardHeader}>
-                                        <Text style={styles.savedCardTitle}>Saved Card</Text>
-                                        <TouchableOpacity onPress={toggleUseStoredCard}>
-                                            <Icon
-                                                name={useStoredCard ? "checkbox-marked" : "checkbox-blank-outline"}
-                                                size={24}
-                                                color="#6bb2db"
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                    {useStoredCard && (
-                                        <View style={styles.savedCardDetails}>
-                                            <Text style={styles.savedCardNumber}>•••• •••• •••• {savedCard.lastFour}</Text>
-                                            <Text style={styles.savedCardName}>{savedCard.cardHolder}</Text>
-                                            <Text style={styles.savedCardExpiry}>Expires: {savedCard.expiryDate}</Text>
-                                        </View>
-                                    )}
-                                </Card.Content>
-                            </Card>
-                        )}
-
-                        {!useStoredCard && (
-                            <>
-                                <TextInput
-                                    label="Card Number"
-                                    value={paymentInfo.cardNumber}
-                                    onChangeText={formatCardNumber}
-                                    style={styles.input}
-                                    keyboardType="numeric"
-                                    maxLength={19} // 16 digits + 3 spaces
-                                    error={!!errors.cardNumber}
-                                    left={<TextInput.Icon icon="credit-card" />}
-                                />
-                                {errors.cardNumber && <HelperText type="error">{errors.cardNumber}</HelperText>}
-
-                                <TextInput
-                                    label="Cardholder Name"
-                                    value={paymentInfo.cardHolder}
-                                    onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cardHolder: text })}
-                                    style={styles.input}
-                                    error={!!errors.cardHolder}
-                                    left={<TextInput.Icon icon="account" />}
-                                />
-                                {errors.cardHolder && <HelperText type="error">{errors.cardHolder}</HelperText>}
-
-                                <View style={styles.row}>
-                                    <View style={styles.halfInput}>
-                                        <TextInput
-                                            label="Expiry Date (MM/YY)"
-                                            value={paymentInfo.expiryDate}
-                                            onChangeText={formatExpiryDate}
-                                            style={styles.input}
-                                            keyboardType="numeric"
-                                            maxLength={5} // MM/YY
-                                            error={!!errors.expiryDate}
-                                            left={<TextInput.Icon icon="calendar" />}
-                                        />
-                                        {errors.expiryDate && <HelperText type="error">{errors.expiryDate}</HelperText>}
-                                    </View>
-
-                                    <View style={styles.halfInput}>
-                                        <TextInput
-                                            label="CVV"
-                                            value={paymentInfo.cvv}
-                                            onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cvv: text.replace(/\D/g, "") })}
-                                            style={styles.input}
-                                            keyboardType="numeric"
-                                            maxLength={4}
-                                            secureTextEntry
-                                            error={!!errors.cvv}
-                                            left={<TextInput.Icon icon="lock" />}
-                                        />
-                                        {errors.cvv && <HelperText type="error">{errors.cvv}</HelperText>}
-                                    </View>
-                                </View>
-                            </>
-                        )}
-
-                        {useStoredCard && (
-                            <View style={styles.cvvOnlyContainer}>
-                                <TextInput
-                                    label="CVV"
-                                    value={paymentInfo.cvv}
-                                    onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cvv: text.replace(/\D/g, "") })}
-                                    style={styles.input}
-                                    keyboardType="numeric"
-                                    maxLength={4}
-                                    secureTextEntry
-                                    error={!!errors.cvv}
-                                    left={<TextInput.Icon icon="lock" />}
-                                />
-                                {errors.cvv && <HelperText type="error">{errors.cvv}</HelperText>}
-                            </View>
-                        )}
-
-                        <View style={styles.secureNotice}>
-                            <Icon name="shield-check" size={20} color="#4CAF50" />
-                            <Text style={styles.secureText}>Your payment information is secure and encrypted</Text>
-                        </View>
-
-                        <View style={styles.modalButtons}>
+                    {selectedPaymentMethod === null ? (
+                        <>
+                            <Text style={styles.modalTitle}>Select Payment Method</Text>
+                            <Button mode="contained" onPress={() => setSelectedPaymentMethod("card")} style={styles.methodButton}>
+                                Pay with Card
+                            </Button>
+                            <Button mode="contained" onPress={() => setSelectedPaymentMethod("paypal")} style={styles.methodButton}>
+                                Pay with PayPal
+                            </Button>
                             <Button mode="outlined" onPress={() => setCheckoutModalVisible(false)} style={styles.cancelButton}>
                                 Cancel
                             </Button>
-                            <Button
-                                mode="contained"
-                                onPress={handleCheckout}
-                                style={styles.payButton}
-                                loading={processingPayment}
-                                disabled={processingPayment}
+                        </>
+                    ) : selectedPaymentMethod === "card" ? (
+                        <ScrollView>
+                            <Text style={styles.modalTitle}>Payment Information</Text>
+                            <Text style={styles.modalSubtitle}>Enter your card details to complete your purchase</Text>
+                            <View style={styles.cardIconsContainer}>
+                                <Icon name="credit-card" size={24} color="#6bb2db" style={styles.cardIcon} />
+                                <Icon name="credit-card-outline" size={24} color="#6bb2db" style={styles.cardIcon} />
+                                <Icon name="credit-card-multiple" size={24} color="#6bb2db" style={styles.cardIcon} />
+                            </View>
+                            <TextInput
+                                label="Card Number"
+                                value={paymentInfo.cardNumber}
+                                onChangeText={formatCardNumber}
+                                style={styles.input}
+                                keyboardType="numeric"
+                                maxLength={19}
+                                error={!!errors.cardNumber}
+                                left={<TextInput.Icon icon="credit-card" />}
+                            />
+                            {errors.cardNumber && <HelperText type="error">{errors.cardNumber}</HelperText>}
+                            <TextInput
+                                label="Cardholder Name"
+                                value={paymentInfo.cardHolder}
+                                onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cardHolder: text })}
+                                style={styles.input}
+                                error={!!errors.cardHolder}
+                                left={<TextInput.Icon icon="account" />}
+                            />
+                            {errors.cardHolder && <HelperText type="error">{errors.cardHolder}</HelperText>}
+                            <View style={styles.row}>
+                                <View style={styles.halfInput}>
+                                    <TextInput
+                                        label="Expiry Date (MM/YY)"
+                                        value={paymentInfo.expiryDate}
+                                        onChangeText={formatExpiryDate}
+                                        style={styles.input}
+                                        keyboardType="numeric"
+                                        maxLength={5}
+                                        error={!!errors.expiryDate}
+                                        left={<TextInput.Icon icon="calendar" />}
+                                    />
+                                    {errors.expiryDate && <HelperText type="error">{errors.expiryDate}</HelperText>}
+                                </View>
+                                <View style={styles.halfInput}>
+                                    <TextInput
+                                        label="CVV"
+                                        value={paymentInfo.cvv}
+                                        onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cvv: text.replace(/\D/g, "") })}
+                                        style={styles.input}
+                                        keyboardType="numeric"
+                                        maxLength={4}
+                                        secureTextEntry
+                                        error={!!errors.cvv}
+                                        left={<TextInput.Icon icon="lock" />}
+                                    />
+                                    {errors.cvv && <HelperText type="error">{errors.cvv}</HelperText>}
+                                </View>
+                            </View>
+                            <View style={styles.secureNotice}>
+                                <Icon name="shield-check" size={20} color="#4CAF50" />
+                                <Text style={styles.secureText}>Your payment information is secure and encrypted</Text>
+                            </View>
+                            <View style={styles.modalButtons}>
+                                <Button mode="outlined" onPress={() => setSelectedPaymentMethod(null)} style={styles.cancelButton}>
+                                    Back
+                                </Button>
+                                <Button
+                                    mode="contained"
+                                    onPress={handleCheckout}
+                                    style={styles.payButton}
+                                    loading={processingPayment}
+                                    disabled={processingPayment}
+                                >
+                                    Pay ${totalPrice.toFixed(2)}
+                                </Button>
+                            </View>
+                        </ScrollView>
+                    ) : selectedPaymentMethod === "paypal" ? (
+                        <ScrollView 
+                            style={styles.paypalModalScroll}
+                            contentContainerStyle={styles.paypalContentWrapper}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            <Text style={styles.paypalModalTitle}>Pago con PayPal</Text>
+                            
+                            <View style={styles.paypalWebView}>
+                                <PayPalCheckout
+                                    amount={totalPrice}
+                                    onPaymentSuccess={handlePayPalPaymentSuccess}
+                                    onPaymentError={handlePayPalPaymentError}
+                                    onClose={() => console.log('Pago cancelado o ventana cerrada')}
+                                />
+                            </View>
+                    
+                            <Button 
+                                mode="outlined" 
+                                onPress={() => setSelectedPaymentMethod(null)}
+                                style={styles.paypalBackButton}
+                                labelStyle={styles.paypalBackButtonText}
                             >
-                                Pay ${totalPrice.toFixed(2)}
+                                Volver
                             </Button>
-                        </View>
-                    </ScrollView>
+                        </ScrollView>
+                    ) : null}
                 </Modal>
             </Portal>
         </View>
@@ -624,7 +662,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 10,
         paddingVertical: 15,
-        paddingTop: Platform.OS === "ios" ? 50 : 15, // Añadir más padding para iOS
+        paddingTop: Platform.OS === "ios" ? 50 : 15,
         backgroundColor: "#2c3e50",
     },
     title: {
@@ -632,7 +670,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#FFFFFF",
         textAlign: "center",
-        flex: 1, // Permitir que el título ocupe el espacio disponible
+        flex: 1,
     },
     loadingContainer: {
         flex: 1,
@@ -744,7 +782,7 @@ const styles = StyleSheet.create({
         margin: 10,
         borderRadius: 10,
         elevation: 3,
-        marginBottom: Platform.OS === "ios" ? 30 : 10, // Añadir más margen en la parte inferior para iOS
+        marginBottom: Platform.OS === "ios" ? 30 : 10,
     },
     summaryRow: {
         flexDirection: "row",
@@ -777,10 +815,15 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         backgroundColor: "white",
+        // flex: 1,
+        justifyContent: "center",
+        margin: 15,
         padding: 20,
-        margin: 20,
         borderRadius: 10,
-        maxHeight: "80%",
+        height: '500',
+        width: 'auto',
+        maxwidth: "85%",
+        overflow: "hidden",
     },
     modalTitle: {
         fontSize: 20,
@@ -831,52 +874,68 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         marginTop: 20,
     },
+    methodButton: {
+        marginVertical: 10,
+        backgroundColor: "#2c3e50", // Color más oscuro para mejor contraste
+        paddingVertical: 12,
+        borderRadius: 80,
+        alignItems: "center",
+    },
+    methodButtonText: {
+        color: "#FFFFFF",
+        fontWeight: "bold",
+        fontSize: 16,
+    },
     cancelButton: {
-        flex: 1,
-        marginRight: 10,
+        marginVertical: 10,
         borderColor: "#6bb2db",
     },
     payButton: {
-        flex: 2,
+        marginVertical: 10,
         backgroundColor: "#6bb2db",
     },
-    savedCardContainer: {
-        marginBottom: 15,
-        borderRadius: 10,
-        borderLeftWidth: 4,
-        borderLeftColor: "#6bb2db",
+    /* ========== Nuevos estilos para PayPal ========== */
+    paypalModalScroll: {
+        flex: 1,
+        paddingHorizontal: 8,
     },
-    savedCardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
+    paypalContentWrapper: {
+        padding: 16,
+        paddingBottom: 45
+    },
+    paypalWebView: {
+        height: 500,
+        width: "100%",
+        borderRadius: 8,
+        overflow: "hidden",
+        marginVertical: 12,
+        backgroundColor: 'white',
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: "#6bb2db", // Agregado un borde para resaltar el WebView
+    },
+
+    paypalBackButton: {
+        alignSelf: "center",
+        marginTop: 20,
+        width: "90%",
+        borderColor: "#6bb2db",
+        borderWidth: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
         alignItems: "center",
     },
-    savedCardTitle: {
+    paypalBackButtonText: {
+        color: "#6bb2db",
+        fontWeight: "600",
         fontSize: 16,
-        fontWeight: "bold",
+    },
+    paypalModalTitle: {
+        fontSize: 20,
+        fontWeight: "700",
         color: "#2c3e50",
-    },
-    savedCardDetails: {
-        marginTop: 10,
-    },
-    savedCardNumber: {
-        fontSize: 16,
-        marginBottom: 5,
-    },
-    savedCardName: {
-        fontSize: 14,
-        color: "#666",
-        marginBottom: 5,
-    },
-    savedCardExpiry: {
-        fontSize: 14,
-        color: "#666",
-    },
-    cvvOnlyContainer: {
-        marginTop: 10,
-        marginBottom: 10,
-    },
-})
-
-export default CartScreen
-
+        textAlign: "center",
+        marginBottom: 20,
+    }
+});
+export default CartScreen;
