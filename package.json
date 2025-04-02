@@ -29,6 +29,7 @@
     "expo": "~52.0.42",
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "^14.0.2",
+    "expo-maps": "^0.7.3",
     "expo-status-bar": "~2.0.1",
     "firebase": "^11.4.0",
     "install": "^0.13.0",
@@ -44,7 +45,6 @@
     "react-native-gesture-handler": "~2.20.2",
     "react-native-maps": "1.18.0",
     "react-native-mask-text": "^0.14.2",
-    "react-native-masked-text": "^1.12.5",
     "react-native-pager-view": "6.5.1",
     "react-native-paper": "^5.13.1",
     "react-native-reanimated": "~3.16.1",
@@ -59,7 +59,10 @@
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
-        "exclude": ["react-native-maps", "react-native-masked-text"],
+        "exclude": [
+          "react-native-maps",
+          "react-native-masked-text"
+        ],
         "listUnknownPackages": false
       }
     }
