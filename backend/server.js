@@ -4,7 +4,7 @@ const cors = require('cors');
 const axios = require('axios');
 
 const app = express();
-const URL = 'http://192.168.0.166'; // CAMBIAR LA IP A LA DE TU COMPUTADORA
+const URL = 'http://192.168.0.127'; // CAMBIAR LA IP A LA DE TU COMPUTADORA
 
 
 // Configuración de middlewares
