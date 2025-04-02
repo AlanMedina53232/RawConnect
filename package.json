@@ -59,7 +59,10 @@
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
-        "exclude": ["react-native-maps", "react-native-masked-text"],
+        "exclude": [
+          "react-native-maps",
+          "react-native-masked-text"
+        ],
         "listUnknownPackages": false
       }
     }

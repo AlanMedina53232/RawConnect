@@ -102,7 +102,7 @@ const PayPalCheckout = ({ amount, onPaymentSuccess, onClose = () => {} }) => {
         Alert.alert('Error', 'El pago tardó demasiado en completarse');
         onClose();
       }
-    }, 45000);
+    }, 120000);
     return () => clearTimeout(paymentTimeout);
   }, [onClose]);
 

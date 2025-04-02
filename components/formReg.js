@@ -250,7 +250,7 @@ export default function Reg({ isProducer = false }) {
         onLocationSelect={async (location) => {
           try {
             const address = await reverseGeocode(location.latitude, location.longitude);
-            updateFormData("address", address);  // Actualiza el estado con la dirección
+            updateFormData("address", address);  // Actualiza el estado con la dirección 
             setMapVisible(false);  // Cierra el mapa
           } catch (error) {
             setError("No se pudo obtener la dirección.");
