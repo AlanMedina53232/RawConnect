@@ -350,7 +350,7 @@ const BuyerProfileScreen = ({ route, navigation }) => {
 
     const renderField = (icon, label, value, key, editable = true) => (
         <View style={styles.fieldContainer}>
-            <Icon name={icon} size={24} color="#6bb2db" style={styles.fieldIcon} />
+            <Icon name={icon} size={24} color="#2C3E50" style={styles.fieldIcon} />
             <View style={styles.fieldContent}>
                 <Text style={styles.fieldLabel}>{label}</Text>
                 {isEditing && editable ? (
@@ -398,11 +398,11 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                         <Avatar.Text
                             size={120}
                             label={userData?.fullName?.charAt(0) || userData?.email?.charAt(0) || "B"}
-                            backgroundColor="#6bb2db"
+                            backgroundColor="#2C3E50"
                         />
                     )}
                     <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                        <Icon name={isEditing ? "check" : "pencil"} size={24} color="#6bb2db" />
+                        <Icon name={isEditing ? "check" : "pencil"} size={24} color="#2C3E50" />
                     </TouchableOpacity>
                 </View>
                 <View style={styles.content}>
@@ -419,7 +419,7 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                         <Card style={styles.cardContainer}>
                             <Card.Content>
                                 <View style={styles.cardHeader}>
-                                    <Icon name="credit-card" size={24} color="#6bb2db" />
+                                    <Icon name="credit-card" size={24} color="#2C3E50" />
                                     <Text style={styles.cardTitle}>Saved Card</Text>
                                 </View>
                                 <View style={styles.cardDetails}>
@@ -705,8 +705,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         borderRadius: 10,
         borderLeftWidth: 4,
-        borderLeftColor: "#6bb2db",
+        borderLeftColor: "#2C3E50",
         elevation: 3,
+        backgroundColor: "#ffffff",
+
     },
     cardHeader: {
         flexDirection: "row",
@@ -742,22 +744,22 @@ const styles = StyleSheet.create({
     cardButton: {
         flex: 1,
         marginHorizontal: 5,
-        borderColor: "#6bb2db",
+        borderColor: "#2C3E50",
     },
     removeButton: {
         borderColor: "#D32F2F",
     },
     addCardButton: {
-        backgroundColor: "#6bb2db",
+        backgroundColor: "#2C3E50",
         marginBottom: 20,
     },
     resetButton: {
         marginTop: 10,
-        backgroundColor: "#6bb2db",
+        backgroundColor: "#2C3E50",
     },
     backButton: {
         marginTop: 15,
-        borderColor: "#6bb2db",
+        borderColor: "#2C3E50",
     },
     signOutButton: {
         marginTop: 20,
@@ -796,15 +798,15 @@ const styles = StyleSheet.create({
     cancelButton: {
         flex: 1,
         marginRight: 10,
-        borderColor: "#6bb2db",
+        borderColor: "#2C3E50",
     },
     verifyButton: {
         flex: 2,
-        backgroundColor: "#6bb2db",
+        backgroundColor: "#2C3E50",
     },
     saveButton: {
         flex: 2,
-        backgroundColor: "#6bb2db",
+        backgroundColor: "#2C3E50",
     },
     row: {
         flexDirection: "row",
