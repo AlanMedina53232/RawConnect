@@ -72,7 +72,6 @@ const HomeScreen = ({ navigation }) => {
 
         const querySnapshot = await getDocs(cartQuery)
         setCartItemCount(querySnapshot.size)
-        
       }
     } catch (error) {
       console.error("Error fetching cart count:", error)
@@ -135,15 +134,57 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.featuredSection}>
-          <Text style={styles.featuredTitle}>Featured Products</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.featuredScroll}>
-            {[1, 2, 3, 4, 5].map((item) => (
-              <GradientBackground key={item} colors={["#34495e", "#2c3e50"]} style={styles.featuredItem}>
-                <Text style={styles.featuredItemText}>Product {item}</Text>
-              </GradientBackground>
-            ))}
-          </ScrollView>
+        {/* Sección informativa sobre RawConnect (reemplazando Featured Products) */}
+        <View style={styles.aboutSection}>
+          <Text style={styles.aboutTitle}>About RawConnect</Text>
+
+          <View style={styles.aboutCard}>
+            <View style={styles.aboutImageContainer}>
+              <Image source={require("../assets/carrito.jpg")} style={styles.aboutImage} resizeMode="cover" />
+            </View>
+            <View style={styles.aboutContent}>
+              <Text style={styles.aboutHeading}>Direct Sourcing</Text>
+              <Text style={styles.aboutText}>
+                Connect directly with producers and eliminate intermediaries, ensuring better prices and authentic
+                products.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.aboutCard}>
+            <View style={styles.aboutContent}>
+              <Text style={styles.aboutHeading}>Sustainable Trade</Text>
+              <Text style={styles.aboutText}>
+                Support sustainable practices and responsible sourcing with our transparent system.
+              </Text>
+            </View>
+            <View style={styles.aboutImageContainer}>
+              <Image source={require("../assets/e comerce.png")} style={styles.aboutImage} resizeMode="cover" />
+            </View>
+          </View>
+
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>500+</Text>
+              <Text style={styles.statLabel}>Producers</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>50+</Text>
+              <Text style={styles.statLabel}>Countries</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>10K+</Text>
+              <Text style={styles.statLabel}>Products</Text>
+            </View>
+          </View>
+
+          <View style={styles.missionCard}>
+            <Text style={styles.missionTitle}>Our Mission</Text>
+            <Text style={styles.missionText}>
+              "To create a transparent marketplace that connects buyers directly with producers, promoting fair trade
+              and sustainable practices across global supply chains."
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -388,33 +429,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
   },
-  featuredSection: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  featuredTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
-    color: "#2c3e50",
-    textAlign: "center",
-  },
-  featuredScroll: {
-    paddingBottom: 20,
-  },
-  featuredItem: {
-    width: 150,
-    height: 200,
-    marginRight: 15,
-    borderRadius: 10,
-    justifyContent: "flex-end",
-    padding: 10,
-  },
-  featuredItemText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
   profileButton: {
     margin: 20,
     backgroundColor: "#2c3e50",
@@ -440,6 +454,116 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
+  // Estilos para la sección About RawConnect
+  aboutSection: {
+    padding: 20,
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  aboutTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#2c3e50",
+    textAlign: "center",
+  },
+  aboutCard: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  aboutImagePlaceholder: {
+    width: width * 0.35,
+    backgroundColor: "#e0e0e0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  aboutImageContainer: {
+    width: width * 0.35,
+    overflow: "hidden",
+  },
+  aboutImage: {
+    width: "100%",
+    height: 200,
+  },
+  placeholderText: {
+    color: "#757575",
+    fontSize: 12,
+    textAlign: "center",
+    padding: 10,
+  },
+  aboutContent: {
+    flex: 1,
+    padding: 15,
+    justifyContent: "center",
+  },
+  aboutHeading: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 8,
+  },
+  aboutText: {
+    fontSize: 14,
+    color: "#546E7A",
+    lineHeight: 20,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 20,
+    paddingHorizontal: 10,
+  },
+  statItem: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 12,
+    width: width * 0.27,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 5,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#546E7A",
+  },
+  missionCard: {
+    backgroundColor: "#2c3e50",
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 10,
+  },
+  missionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  missionText: {
+    fontSize: 15,
+    color: "#ecf0f1",
+    lineHeight: 22,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
 })
 
 export default MainBuyer
+
