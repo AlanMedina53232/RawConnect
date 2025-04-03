@@ -106,15 +106,15 @@ const AddProductScreen = () => {
 
     const handleSubmit = async () => {
         if (!validateForm()) return
-   
+
         if (!userData.email) {
             Alert.alert("Error", "Vendedor no tiene un correo electrónico asociado.")
             return
         }
-   
+
         try {
             setLoading(true)
-   
+
             const productData = {
                 ...product,
                 price: Number.parseFloat(product.price),
@@ -124,9 +124,9 @@ const AddProductScreen = () => {
                 imageUrl: product.imageUrl,
                 vendor: userData.email,
             }
-   
+
             await addDoc(collection(db, "products"), productData)
-   
+
             Alert.alert("Success", "Product added successfully", [{ text: "OK", onPress: () => navigation.goBack() }])
         } catch (error) {
             console.error("Error adding product:", error)
@@ -135,7 +135,7 @@ const AddProductScreen = () => {
             setLoading(false)
         }
     }
-   
+
 
     // Group unit measures by category for the menu
     const groupedUnitMeasures = unitMeasures.reduce((acc, unit) => {
@@ -148,7 +148,7 @@ const AddProductScreen = () => {
 
     return (
         <View style={styles.container}>
-            <LinearGradient colors={["#6bb2db", "#4a90c0"]} style={styles.header}>
+            <LinearGradient colors={["#2c3e50", "#1a2530"]} style={styles.header}>
                 <IconButton
                     icon="arrow-left"
                     iconColor="#FFFFFF"
@@ -176,8 +176,8 @@ const AddProductScreen = () => {
                             onChangeText={(text) => updateProduct("name", text)}
                             mode="outlined"
                             style={styles.input}
-                            outlineColor="#4a90c0"
-                            activeOutlineColor="#6bb2db"
+                            outlineColor="#2c3e50"
+                            activeOutlineColor="#34495e"
                             left={<TextInput.Icon icon="tag" />}
                         />
 
@@ -188,8 +188,8 @@ const AddProductScreen = () => {
                                 onChangeText={(text) => updateProduct("category", text)}
                                 mode="outlined"
                                 style={styles.input}
-                                outlineColor="#4a90c0"
-                                activeOutlineColor="#6bb2db"
+                                outlineColor="#2c3e50"
+                                activeOutlineColor="#34495e"
                                 left={<TextInput.Icon icon="shape" />}
                                 right={<TextInput.Icon icon="menu-down" onPress={() => setCategoryMenuVisible(true)} />}
                             />
@@ -216,8 +216,8 @@ const AddProductScreen = () => {
                                         key={category}
                                         selected={product.category === category}
                                         onPress={() => updateProduct("category", category)}
-                                        style={[styles.chip, product.category === category && { backgroundColor: "#d6eaf8" }]}
-                                        textStyle={product.category === category ? { color: "#4a90c0" } : {}}
+                                        style={[styles.chip, product.category === category && { backgroundColor: "#eaecee" }]}
+                                        textStyle={product.category === category ? { color: "#2c3e50" } : {}}
                                     >
                                         {category}
                                     </Chip>
@@ -231,8 +231,8 @@ const AddProductScreen = () => {
                             onChangeText={(text) => updateProduct("description", text)}
                             mode="outlined"
                             style={styles.input}
-                            outlineColor="#4a90c0"
-                            activeOutlineColor="#6bb2db"
+                            outlineColor="#2c3e50"
+                            activeOutlineColor="#34495e"
                             multiline
                             numberOfLines={3}
                             left={<TextInput.Icon icon="text" />}
@@ -249,8 +249,8 @@ const AddProductScreen = () => {
                             onChangeText={(text) => updateProduct("specifications", text)}
                             mode="outlined"
                             style={styles.input}
-                            outlineColor="#4a90c0"
-                            activeOutlineColor="#6bb2db"
+                            outlineColor="#2c3e50"
+                            activeOutlineColor="#34495e"
                             multiline
                             numberOfLines={3}
                             left={<TextInput.Icon icon="clipboard-list" />}
@@ -263,8 +263,8 @@ const AddProductScreen = () => {
                                 onChangeText={(text) => updateProduct("price", text)}
                                 mode="outlined"
                                 style={[styles.input, styles.halfInput]}
-                                outlineColor="#4a90c0"
-                                activeOutlineColor="#6bb2db"
+                                outlineColor="#2c3e50"
+                                activeOutlineColor="#34495e"
                                 keyboardType="numeric"
                                 left={<TextInput.Icon icon="currency-usd" />}
                             />
@@ -275,8 +275,8 @@ const AddProductScreen = () => {
                                 onChangeText={(text) => updateProduct("minimumOrder", text)}
                                 mode="outlined"
                                 style={[styles.input, styles.halfInput]}
-                                outlineColor="#4a90c0"
-                                activeOutlineColor="#6bb2db"
+                                outlineColor="#2c3e50"
+                                activeOutlineColor="#34495e"
                                 keyboardType="numeric"
                                 left={<TextInput.Icon icon="package-variant" />}
                             />
@@ -290,8 +290,8 @@ const AddProductScreen = () => {
                                     onChangeText={(text) => updateProduct("quantity", text)}
                                     mode="outlined"
                                     style={styles.input}
-                                    outlineColor={quantityError ? "#F44336" : "#4a90c0"}
-                                    activeOutlineColor={quantityError ? "#F44336" : "#6bb2db"}
+                                    outlineColor={quantityError ? "#F44336" : "#2c3e50"}
+                                    activeOutlineColor={quantityError ? "#F44336" : "#34495e"}
                                     keyboardType="numeric"
                                     left={<TextInput.Icon icon="counter" />}
                                     error={!!quantityError}
@@ -309,8 +309,8 @@ const AddProductScreen = () => {
                                     }
                                     mode="outlined"
                                     style={styles.input}
-                                    outlineColor="#4a90c0"
-                                    activeOutlineColor="#6bb2db"
+                                    outlineColor="#2c3e50"
+                                    activeOutlineColor="#34495e"
                                     left={<TextInput.Icon icon="scale" />}
                                     right={<TextInput.Icon icon="menu-down" onPress={() => setUnitMenuVisible(true)} />}
                                     editable={false}
@@ -348,8 +348,8 @@ const AddProductScreen = () => {
                             onChangeText={(text) => updateProduct("deliveryOptions", text)}
                             mode="outlined"
                             style={styles.input}
-                            outlineColor="#4a90c0"
-                            activeOutlineColor="#6bb2db"
+                            outlineColor="#2c3e50"
+                            activeOutlineColor="#34495e"
                             multiline
                             numberOfLines={2}
                             left={<TextInput.Icon icon="truck" />}
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: "bold",
-        color: "#4a90c0",
+        color: "#2c3e50",
         marginTop: 16,
         marginBottom: 8,
         marginLeft: 4,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     },
     menuCategoryTitle: {
         fontWeight: "bold",
-        color: "#4a90c0",
+        color: "#2c3e50",
     },
     chipContainer: {
         flexDirection: "row",
@@ -456,12 +456,12 @@ const styles = StyleSheet.create({
     },
     chip: {
         margin: 4,
-        backgroundColor: "#f0f8ff",
+        backgroundColor: "#f5f7fa",
     },
     submitButton: {
         marginTop: 20,
         marginBottom: 40,
-        backgroundColor: "#6bb2db",
+        backgroundColor: "#2c3e50",
         paddingVertical: 8,
         borderRadius: 12,
         elevation: 4,
@@ -469,4 +469,3 @@ const styles = StyleSheet.create({
 })
 
 export default AddProductScreen
-

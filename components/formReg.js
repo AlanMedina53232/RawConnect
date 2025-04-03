@@ -1,11 +1,11 @@
 import { useNavigation } from "@react-navigation/native";
-import ImageUploader from './ImageUploader';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { Alert, Box, Button, FormControl, Input, Select, Text, TextArea } from "native-base";
 import { useState } from "react";
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { auth, db } from "../config/fb.js";
+import ImageUploader from './ImageUploader';
 import MapModal from "./MapModal.js";
 import reverseGeocode from "./geocode.js";
 
@@ -122,9 +122,9 @@ export default function Reg({ isProducer = false }) {
     <ScrollView>
       <View style={styles.container}>
         <Box width="100%" maxWidth="400px">
-          
+
           <ImageUploader
-            uploadPreset="rawcn_users" 
+            uploadPreset="rawcn_users"
             onUploadComplete={(url) => updateFormData("profileImage", url)}
           />
 
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   button: {
     width: "75%",
     padding: 10,
-    backgroundColor: "#0D47A1",
+    backgroundColor: "#2c3e50",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
