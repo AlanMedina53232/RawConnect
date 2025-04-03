@@ -70,6 +70,50 @@ export default function Agricultural({ navigation, route }) {
         }
     }, [searchText, products]) // Re-filtrar cada vez que cambia el texto de búsqueda o los productos
 
+    // Modificar el useEffect para escuchar los cambios en route.params.refreshProducts
+    useEffect(() => {
+        if (route.params?.refreshProducts) {
+            console.log("Refreshing products after review update")
+            fetchProducts(selectedCategory)
+
+            // Limpiar el parámetro para evitar refrescos innecesarios
+            if (navigation.setParams) {
+                navigation.setParams({ refreshProducts: undefined, updatedProductId: undefined })
+            }
+        }
+    }, [route.params?.refreshProducts])
+
+    // Modificar la función renderStars para mostrar correctamente las calificaciones
+    const renderStars = (rating, product) => {
+        // Asegurarse de que rating es un número
+        const numericRating = Number.parseFloat(rating) || 0
+
+        const stars = []
+        const fullStars = Math.floor(numericRating)
+        const halfStar = numericRating - fullStars >= 0.5
+
+        for (let i = 0; i < 5; i++) {
+            if (i < fullStars) {
+                stars.push(<Ionicons key={i} name="star" size={14} color={COLORS.primary} />)
+            } else if (i === fullStars && halfStar) {
+                stars.push(<Ionicons key={i} name="star-half" size={14} color={COLORS.primary} />)
+            } else {
+                stars.push(<Ionicons key={i} name="star-outline" size={14} color={COLORS.primary} />)
+            }
+        }
+
+        return (
+            <View style={styles.ratingContainer}>
+                {stars}
+                <Text style={styles.ratingText}>
+                    {numericRating > 0 ? numericRating.toFixed(1) : "No ratings"}
+                    {numericRating > 0 && product.ratingCount > 0 && ` (${product.ratingCount})`}
+                </Text>
+            </View>
+        )
+    }
+
+    // Modificar la función fetchProducts para asegurar que se carguen correctamente las calificaciones
     const fetchProducts = async (category) => {
         try {
             setLoading(true)
@@ -86,46 +130,29 @@ export default function Agricultural({ navigation, route }) {
 
             const querySnapshot = await getDocs(q)
 
+            const productsList = querySnapshot.docs.map((doc) => {
+                const data = doc.data()
+                // Asegurarse de que rating y ratingCount sean números
+                return {
+                    id: doc.id,
+                    ...data,
+                    rating: typeof data.rating === "number" ? data.rating : 0,
+                    ratingCount: typeof data.ratingCount === "number" ? data.ratingCount : 0,
+                }
+            })
 
-            const productsList = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-                // Add default rating if not present
-                rating: doc.data().rating || 4.5,
-            }))
-
-           
+            console.log(
+                "Fetched products with ratings:",
+                productsList.map((p) => `${p.name}: ${p.rating} (${p.ratingCount} reviews)`),
+            )
 
             setProducts(productsList)
-            setFilteredProducts(productsList) // Inicialmente, no hay filtro, así que mostramos todos los productos
+            setFilteredProducts(productsList)
         } catch (error) {
             console.error("Error fetching products:", error)
         } finally {
             setLoading(false)
         }
-    }
-
-    const renderStars = (rating) => {
-        const stars = []
-        const fullStars = Math.floor(rating)
-        const halfStar = rating - fullStars >= 0.5
-
-        for (let i = 0; i < 5; i++) {
-            if (i < fullStars) {
-                stars.push(<Ionicons key={i} name="star" size={14} color={COLORS.primary} />)
-            } else if (i === fullStars && halfStar) {
-                stars.push(<Ionicons key={i} name="star-half" size={14} color={COLORS.primary} />)
-            } else {
-                stars.push(<Ionicons key={i} name="star-outline" size={14} color={COLORS.primary} />)
-            }
-        }
-
-        return (
-            <View style={styles.ratingContainer}>
-                {stars}
-                <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-            </View>
-        )
     }
 
     const navigateToProductDetails = (product) => {
@@ -226,7 +253,7 @@ export default function Agricultural({ navigation, route }) {
                                                     {product.name}
                                                 </Text>
                                                 <Text style={styles.featuredProductPrice}>${product.price}</Text>
-                                                {renderStars(product.rating)}
+                                                {renderStars(product.rating || 0, product)}
                                             </View>
                                         </TouchableOpacity>
                                     ))}
@@ -256,7 +283,7 @@ export default function Agricultural({ navigation, route }) {
                                                     {product.name}
                                                 </Text>
                                                 <Text style={styles.productPrice}>${product.price}</Text>
-                                                {renderStars(product.rating)}
+                                                {renderStars(product.rating || 0, product)}
                                             </View>
                                         </TouchableOpacity>
                                     ))}

@@ -13,11 +13,12 @@ import {
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from "react-native"
-import { Card } from "react-native-paper"
-import { addDoc, auth, collection, db, doc, getDocs, query, updateDoc, where } from "../../config/fb"
+import { Button, Card, Modal, Portal } from "react-native-paper"
+import { addDoc, auth, collection, db, doc, getDoc, getDocs, query, updateDoc, where } from "../../config/fb"
 const { width } = Dimensions.get("window")
 
 const COLORS = {
@@ -61,8 +62,25 @@ export default function ProductDetails({ route, navigation }) {
     const { product } = route.params
     const [quantity, setQuantity] = useState(1)
     const [stockStatus, setStockStatus] = useState("high") // high, medium, low
+    const [reviews, setReviews] = useState([])
+    const [averageRating, setAverageRating] = useState(0)
+    const [canReview, setCanReview] = useState(false)
+    const [reviewModalVisible, setReviewModalVisible] = useState(false)
+    const [userReview, setUserReview] = useState({
+        rating: 0,
+        comment: "",
+    })
+    const [userHasReviewed, setUserHasReviewed] = useState(false)
+    const [loading, setLoading] = useState(true)
+    // Añadir un estado para controlar el procesamiento de la reseña
+    const [processingReview, setProcessingReview] = useState(false)
 
     useEffect(() => {
+        // Limpiar el estado de reseñas cuando cambia el producto
+        setReviews([])
+        setAverageRating(0)
+        setLoading(true)
+
         // Determine stock status based on available quantity
         if (product.quantity) {
             if (product.quantity < 10) {
@@ -73,7 +91,205 @@ export default function ProductDetails({ route, navigation }) {
                 setStockStatus("high")
             }
         }
-    }, [product])
+
+        // Fetch reviews for this product
+        fetchReviews()
+
+        // Check if user can review this product
+        checkIfUserCanReview()
+    }, [product.id]) // Cambiar la dependencia a product.id específicamente
+
+    // Añadir un useEffect para actualizar el estado cuando se vuelve a la pantalla
+    useEffect(() => {
+        const unsubscribeFocus = navigation.addListener("focus", () => {
+            // Limpiar el estado de reseñas cuando la pantalla recibe el foco
+            setReviews([])
+            setAverageRating(0)
+
+            // Refrescar las reseñas y verificar elegibilidad cuando la pantalla recibe el foco
+            fetchReviews()
+            checkIfUserCanReview()
+        })
+
+        return unsubscribeFocus
+    }, [navigation, product.id]) // Añadir product.id como dependencia
+
+    // Modificar la función fetchReviews para mejorar el manejo de errores y la limpieza
+    const fetchReviews = async () => {
+        try {
+            console.log("Fetching reviews for product ID:", product.id)
+
+            // Asegurarse de que product.id existe antes de hacer la consulta
+            if (!product.id) {
+                console.error("Product ID is undefined or null")
+                setReviews([])
+                setAverageRating(0)
+                setLoading(false)
+                return
+            }
+
+            const reviewsQuery = query(collection(db, "reviews"), where("productId", "==", product.id))
+
+            const querySnapshot = await getDocs(reviewsQuery)
+
+            const reviewsData = []
+            querySnapshot.forEach((doc) => {
+                reviewsData.push({ id: doc.id, ...doc.data() })
+            })
+
+            console.log(`Found ${reviewsData.length} reviews for product ${product.id}`)
+
+            setReviews(reviewsData)
+
+            // Calculate average rating
+            if (reviewsData.length > 0) {
+                const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0)
+                setAverageRating(totalRating / reviewsData.length)
+            } else {
+                setAverageRating(0)
+            }
+
+            // Check if current user has already reviewed this product
+            if (auth.currentUser) {
+                const userReviewExists = reviewsData.some((review) => review.userId === auth.currentUser.email)
+                setUserHasReviewed(userReviewExists)
+            }
+        } catch (error) {
+            console.error("Error fetching reviews:", error)
+            setReviews([])
+            setAverageRating(0)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Modificar la función checkIfUserCanReview para verificar correctamente si el usuario ya ha dejado una reseña
+    const checkIfUserCanReview = async () => {
+        if (!auth.currentUser) {
+            setCanReview(false)
+            return
+        }
+
+        try {
+            // Primero verificar si el usuario ya ha dejado una reseña para este producto
+            const userReviewsQuery = query(
+                collection(db, "reviews"),
+                where("productId", "==", product.id),
+                where("userId", "==", auth.currentUser.email),
+            )
+
+            const userReviewsSnapshot = await getDocs(userReviewsQuery)
+
+            if (!userReviewsSnapshot.empty) {
+                // El usuario ya ha dejado una reseña
+                setUserHasReviewed(true)
+                setCanReview(false)
+                console.log("User has already reviewed this product")
+                return
+            }
+
+            // Si no ha dejado reseña, verificar si tiene un pedido finalizado con este producto
+            const ordersQuery = query(collection(db, "orders"), where("buyerEmail", "==", auth.currentUser.email))
+
+            const querySnapshot = await getDocs(ordersQuery)
+            let canUserReview = false
+
+            querySnapshot.forEach((orderDoc) => {
+                const orderData = orderDoc.data()
+
+                // Check if this order contains the current product and is finalized
+                if (orderData.status === "finalized" || orderData.status === "finalizado") {
+                    const hasProduct = orderData.items && orderData.items.some((item) => item.productId === product.id)
+
+                    if (hasProduct) {
+                        canUserReview = true
+                    }
+                }
+            })
+
+            // User can review if they have a finalized order with this product and haven't already reviewed it
+            setCanReview(canUserReview)
+
+            console.log("Can user review:", canUserReview, "Has already reviewed:", userHasReviewed)
+        } catch (error) {
+            console.error("Error checking if user can review:", error)
+            setCanReview(false)
+        }
+    }
+
+    // Modificar la función handleSubmitReview para asegurar que el productId se guarde correctamente
+    const handleSubmitReview = async () => {
+        if (!auth.currentUser) {
+            Alert.alert("Error", "You must be logged in to submit a review")
+            return
+        }
+
+        if (userReview.rating === 0) {
+            Alert.alert("Error", "Please select a rating")
+            return
+        }
+
+        try {
+            setProcessingReview(true)
+
+            // Verificar que el product.id existe
+            if (!product.id) {
+                Alert.alert("Error", "Product ID is missing. Cannot submit review.")
+                return
+            }
+
+            console.log("Submitting review for product ID:", product.id)
+
+            // Add review to Firestore with the correct productId
+            await addDoc(collection(db, "reviews"), {
+                productId: product.id,
+                userId: auth.currentUser.email,
+                userName: auth.currentUser.displayName || auth.currentUser.email,
+                rating: userReview.rating,
+                comment: userReview.comment.trim(),
+                createdAt: new Date(),
+            })
+
+            // Update product with new rating
+            const productRef = doc(db, "products", product.id)
+            const productDoc = await getDoc(productRef)
+
+            if (productDoc.exists()) {
+                const productData = productDoc.data()
+                const currentRating = productData.rating || 0
+                const currentRatingCount = productData.ratingCount || 0
+
+                const newRatingCount = currentRatingCount + 1
+                const newRating = (currentRating * currentRatingCount + userReview.rating) / newRatingCount
+
+                await updateDoc(productRef, {
+                    rating: newRating,
+                    ratingCount: newRatingCount,
+                })
+            }
+
+            // Reset form and close modal
+            setUserReview({ rating: 0, comment: "" })
+            setReviewModalVisible(false)
+
+            // Refresh reviews
+            fetchReviews()
+            setUserHasReviewed(true)
+            setCanReview(false)
+
+            // Notificar a la pantalla Agricultural que debe actualizarse
+            if (navigation.setParams) {
+                navigation.setParams({ refreshProducts: true, updatedProductId: product.id })
+            }
+
+            Alert.alert("Success", "Your review has been submitted")
+        } catch (error) {
+            console.error("Error submitting review:", error)
+            Alert.alert("Error", "Failed to submit review. Please try again.")
+        } finally {
+            setProcessingReview(false)
+        }
+    }
 
     // Format the createdAt timestamp
     const formatDate = (timestamp) => {
@@ -121,8 +337,6 @@ export default function ProductDetails({ route, navigation }) {
             setQuantity(quantity - 1)
         }
     }
-
-    // Add this function to the ProductDetails component to handle adding to cart
 
     const addToCart = async () => {
         if (product.quantity && quantity > product.quantity) {
@@ -238,6 +452,49 @@ export default function ProductDetails({ route, navigation }) {
         return !product.quantity || product.quantity === 0
     }
 
+    // Render star rating component
+    const renderStars = (rating, size = 16, interactive = false) => {
+        return (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity
+                        key={star}
+                        onPress={() => (interactive ? setUserReview({ ...userReview, rating: star }) : null)}
+                        disabled={!interactive}
+                    >
+                        <Ionicons
+                            name={rating >= star ? "star" : rating >= star - 0.5 ? "star-half" : "star-outline"}
+                            size={size}
+                            color={interactive ? "#FFD700" : "#FFD700"}
+                            style={{ marginRight: 2 }}
+                        />
+                    </TouchableOpacity>
+                ))}
+                {rating > 0 && (
+                    <Text style={{ marginLeft: 5, fontSize: size * 0.8, color: COLORS.textLight }}>{rating.toFixed(1)}</Text>
+                )}
+            </View>
+        )
+    }
+
+    // Render review item
+    const renderReviewItem = (review) => {
+        return (
+            <Card key={review.id} style={styles.reviewCard}>
+                <Card.Content>
+                    <View style={styles.reviewHeader}>
+                        <View>
+                            <Text style={styles.reviewerName}>{review.userName}</Text>
+                            <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
+                        </View>
+                        {renderStars(review.rating)}
+                    </View>
+                    <Text style={styles.reviewComment}>{review.comment}</Text>
+                </Card.Content>
+            </Card>
+        )
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor={COLORS.white} barStyle="dark-content" />
@@ -276,7 +533,15 @@ export default function ProductDetails({ route, navigation }) {
 
                 <View style={styles.productInfoContainer}>
                     <View style={styles.nameAndPriceContainer}>
-                        <Text style={styles.productName}>{product.name}</Text>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.productName}>{product.name}</Text>
+                            {reviews.length > 0 && (
+                                <View style={styles.ratingContainer}>
+                                    {renderStars(averageRating)}
+                                    <Text style={styles.reviewCount}>({reviews.length} reviews)</Text>
+                                </View>
+                            )}
+                        </View>
                         <Text style={styles.productPrice}>${product.price}</Text>
                     </View>
 
@@ -297,9 +562,6 @@ export default function ProductDetails({ route, navigation }) {
                             </View>
                         </Card.Content>
                     </Card>
-
-
-
 
                     <View style={styles.dateContainer}>
                         <Ionicons name="calendar-outline" size={16} color={COLORS.textLight} />
@@ -359,6 +621,26 @@ export default function ProductDetails({ route, navigation }) {
                             </View>
                         )}
                     </View>
+
+                    <View style={styles.divider} />
+
+                    {/* Reviews Section */}
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.reviewsHeader}>
+                            <Text style={styles.sectionTitle}>Customer Reviews</Text>
+                            {canReview && (
+                                <TouchableOpacity style={styles.writeReviewButton} onPress={() => setReviewModalVisible(true)}>
+                                    <Text style={styles.writeReviewText}>Write a Review</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        {reviews.length > 0 ? (
+                            <View style={styles.reviewsContainer}>{reviews.map(renderReviewItem)}</View>
+                        ) : (
+                            <Text style={styles.noDataText}>No reviews yet</Text>
+                        )}
+                    </View>
                 </View>
             </ScrollView>
 
@@ -383,6 +665,53 @@ export default function ProductDetails({ route, navigation }) {
                     </TouchableOpacity>
                 </View>
             </LinearGradient>
+
+            {/* Review Modal */}
+            <Portal>
+                <Modal
+                    visible={reviewModalVisible}
+                    onDismiss={() => setReviewModalVisible(false)}
+                    contentContainerStyle={styles.modalContainer}
+                >
+                    <Text style={styles.modalTitle}>Write a Review</Text>
+                    <Text style={styles.modalSubtitle}>Share your experience with this product</Text>
+
+                    <View style={styles.ratingInputContainer}>
+                        <Text style={styles.ratingLabel}>Your Rating:</Text>
+                        {renderStars(userReview.rating, 30, true)}
+                    </View>
+
+                    <TextInput
+                        style={styles.commentInput}
+                        placeholder="Write your review here..."
+                        multiline
+                        numberOfLines={5}
+                        value={userReview.comment}
+                        onChangeText={(text) => setUserReview({ ...userReview, comment: text })}
+                        editable={!processingReview}
+                    />
+
+                    <View style={styles.modalButtons}>
+                        <Button
+                            mode="outlined"
+                            onPress={() => setReviewModalVisible(false)}
+                            style={styles.cancelButton}
+                            disabled={processingReview}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            mode="contained"
+                            onPress={handleSubmitReview}
+                            style={styles.submitButton}
+                            loading={processingReview}
+                            disabled={processingReview}
+                        >
+                            Submit Review
+                        </Button>
+                    </View>
+                </Modal>
+            </Portal>
         </SafeAreaView>
     )
 }
@@ -399,10 +728,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 15,
         paddingVertical: 15,
-        paddingTop: Platform.OS === "ios" ? 60 : 25, // Aumentado para iOS
+        paddingTop: Platform.OS === "ios" ? 60 : 25,
         backgroundColor: COLORS.white,
         elevation: 2,
-        height: Platform.OS === "ios" ? 100 : 70, // Altura explícita para la barra
+        height: Platform.OS === "ios" ? 100 : 70,
     },
     backButton: {
         width: 40,
@@ -425,7 +754,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: COLORS.text,
         textAlign: "center",
-        flex: 1, // Allow the title to take up available space
+        flex: 1,
     },
     imageContainer: {
         width: "100%",
@@ -480,8 +809,17 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: "bold",
         color: COLORS.text,
-        flex: 1,
         marginRight: 10,
+    },
+    ratingContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 5,
+    },
+    reviewCount: {
+        fontSize: 14,
+        color: COLORS.textLight,
+        marginLeft: 5,
     },
     productPrice: {
         fontSize: 22,
@@ -586,7 +924,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 20,
         paddingVertical: 15,
-        paddingBottom: Platform.OS === "ios" ? 30 : 15, // Add extra padding at the bottom for iOS
+        paddingBottom: Platform.OS === "ios" ? 30 : 15,
         backgroundColor: COLORS.white,
     },
     quantitySelector: {
@@ -627,6 +965,107 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: COLORS.white,
         marginLeft: 8,
+    },
+    // Review styles
+    reviewsHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 15,
+    },
+    writeReviewButton: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    writeReviewText: {
+        color: COLORS.white,
+        fontSize: 12,
+        fontWeight: "bold",
+    },
+    reviewsContainer: {
+        marginTop: 10,
+    },
+    reviewCard: {
+        marginBottom: 10,
+        borderRadius: 10,
+        elevation: 2,
+    },
+    reviewHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 10,
+    },
+    reviewerName: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: COLORS.text,
+    },
+    reviewDate: {
+        fontSize: 12,
+        color: COLORS.textLight,
+        marginTop: 2,
+    },
+    reviewComment: {
+        fontSize: 14,
+        color: COLORS.text,
+        lineHeight: 20,
+    },
+    // Modal styles
+    modalContainer: {
+        backgroundColor: COLORS.white,
+        padding: 20,
+        margin: 20,
+        borderRadius: 10,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: COLORS.text,
+        textAlign: "center",
+        marginBottom: 5,
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: COLORS.textLight,
+        textAlign: "center",
+        marginBottom: 20,
+    },
+    ratingInputContainer: {
+        marginBottom: 20,
+        alignItems: "center",
+    },
+    ratingLabel: {
+        fontSize: 16,
+        fontWeight: "500",
+        color: COLORS.text,
+        marginBottom: 10,
+    },
+    commentInput: {
+        borderWidth: 1,
+        borderColor: COLORS.lightGray,
+        borderRadius: 8,
+        padding: 10,
+        fontSize: 14,
+        color: COLORS.text,
+        height: 100,
+        textAlignVertical: "top",
+        marginBottom: 20,
+    },
+    modalButtons: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    cancelButton: {
+        flex: 1,
+        marginRight: 10,
+        borderColor: COLORS.primary,
+    },
+    submitButton: {
+        flex: 2,
+        backgroundColor: COLORS.primary,
     },
 })
 

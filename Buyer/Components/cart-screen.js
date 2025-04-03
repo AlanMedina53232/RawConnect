@@ -29,7 +29,7 @@ import {
     updateDoc,
     where,
 } from "../../config/fb"
-import PayPalCheckout from "./PayPalCheckout";
+import PayPalCheckout from "./PayPalCheckout"
 
 const CartScreen = () => {
     const navigation = useNavigation()
@@ -289,85 +289,85 @@ const CartScreen = () => {
     // Método para pago con PayPal
     const handlePayPalPaymentSuccess = async (paymentDetails) => {
         try {
-          setProcessingPayment(true);
-          if (cartItems.length === 0) {
-            Alert.alert("Error", "Your cart is empty");
-            return;
-          }
-      
-          // Extraer los detalles de pago
-          const details = paymentDetails.data ? paymentDetails.data : paymentDetails;
-          console.log("Detalles de pago:", details);
-      
-          // Obtener datos del comprador desde Firebase
-          const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-          const userData = userDoc.data();
-      
-          // Crear órdenes por vendedor
-          const itemsByVendor = groupItemsByVendor();
-      
-          for (const vendorEmail in itemsByVendor) {
-            const vendorItems = itemsByVendor[vendorEmail];
-            const vendorTotal = vendorItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      
-            await createOrder({
-              vendorEmail,
-              vendorItems,
-              vendorTotal,
-              paymentMethod: "PayPal",
-              paymentDetails: {
-                transactionId: details.id,                        // ID de la transacción
-                payerEmail: details.payer?.email_address,         // Extraemos el correo desde details.payer.email_address
-                amount: details.total                             // Monto total
-              }
-            });
-          }
-      
-          // Limpiar carrito y mostrar confirmación
-          await clearCart();
-          showSuccessAlert();
-      
+            setProcessingPayment(true);
+            if (cartItems.length === 0) {
+                Alert.alert("Error", "Your cart is empty");
+                return;
+            }
+
+            // Extraer los detalles de pago
+            const details = paymentDetails.data ? paymentDetails.data : paymentDetails;
+            console.log("Detalles de pago:", details);
+
+            // Obtener datos del comprador desde Firebase
+            const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+            const userData = userDoc.data();
+
+            // Crear órdenes por vendedor
+            const itemsByVendor = groupItemsByVendor();
+
+            for (const vendorEmail in itemsByVendor) {
+                const vendorItems = itemsByVendor[vendorEmail];
+                const vendorTotal = vendorItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+                await createOrder({
+                    vendorEmail,
+                    vendorItems,
+                    vendorTotal,
+                    paymentMethod: "PayPal",
+                    paymentDetails: {
+                        transactionId: details.id,                        // ID de la transacción
+                        payerEmail: details.payer?.email_address,         // Extraemos el correo desde details.payer.email_address
+                        amount: details.total                             // Monto total
+                    }
+                });
+            }
+
+            // Limpiar carrito y mostrar confirmación
+            await clearCart();
+            showSuccessAlert();
+
         } catch (error) {
-          console.error("Error procesando pago PayPal:", error);
-          Alert.alert("Error", "No se pudo completar la transacción");
+            console.error("Error procesando pago PayPal:", error);
+            Alert.alert("Error", "No se pudo completar la transacción");
         } finally {
-          setProcessingPayment(false);
+            setProcessingPayment(false);
         }
-      };
-      
+    };
+
 
     // Nuevas funciones auxiliares
     const groupItemsByVendor = () => {
         return cartItems.reduce((acc, item) => {
-        if (!acc[item.vendorEmail]) acc[item.vendorEmail] = [];
-        acc[item.vendorEmail].push(item);
-        return acc;
+            if (!acc[item.vendorEmail]) acc[item.vendorEmail] = [];
+            acc[item.vendorEmail].push(item);
+            return acc;
         }, {});
     };
 
     const createOrder = async (orderData) => {
         const orderRef = await addDoc(collection(db, "orders"), {
-        buyerId: auth.currentUser.uid,
-        buyerEmail: auth.currentUser.email,
-        ...orderData,
-        status: "pending",
-        createdAt: new Date(),
+            buyerId: auth.currentUser.uid,
+            buyerEmail: auth.currentUser.email,
+            ...orderData,
+            status: "pending",
+            createdAt: new Date(),
         });
 
         // Actualizar inventario
         await Promise.all(orderData.vendorItems.map(async (item) => {
-        const productRef = doc(db, "products", item.productId);
-        await updateDoc(productRef, {
-            quantity: item.productStock - item.quantity
-        });
+            const productRef = doc(db, "products", item.productId);
+            await updateDoc(productRef, {
+                quantity: item.productStock - item.quantity
+            });
         }));
 
         return orderRef;
     };
 
     const clearCart = async () => {
-        await Promise.all(cartItems.map(item => 
-        deleteDoc(doc(db, "cart", item.id))
+        await Promise.all(cartItems.map(item =>
+            deleteDoc(doc(db, "cart", item.id))
         ));
         setCartItems([]);
     };
@@ -375,18 +375,18 @@ const CartScreen = () => {
     const showSuccessAlert = () => {
         setCheckoutModalVisible(false);
         Alert.alert(
-        "¡Pago exitoso!",
-        "Tu orden ha sido procesada correctamente",
-        [
-            { 
-            text: "Ver órdenes", 
-            onPress: () => navigation.navigate("MyOrders") 
-            },
-            { 
-            text: "Seguir comprando", 
-            onPress: () => navigation.navigate("Home") 
-            }
-        ]
+            "¡Pago exitoso!",
+            "Tu orden ha sido procesada correctamente",
+            [
+                {
+                    text: "Ver órdenes",
+                    onPress: () => navigation.navigate("MyOrders")
+                },
+                {
+                    text: "Seguir comprando",
+                    onPress: () => navigation.navigate("Home")
+                }
+            ]
         );
     };
 
@@ -590,7 +590,7 @@ const CartScreen = () => {
                                         onChangeText={(text) => setPaymentInfo({ ...paymentInfo, cvv: text.replace(/\D/g, "") })}
                                         style={styles.input}
                                         keyboardType="numeric"
-                                        maxLength={4}
+                                        maxLength={3}
                                         secureTextEntry
                                         error={!!errors.cvv}
                                         left={<TextInput.Icon icon="lock" />}
@@ -618,13 +618,13 @@ const CartScreen = () => {
                             </View>
                         </ScrollView>
                     ) : selectedPaymentMethod === "paypal" ? (
-                        <ScrollView 
+                        <ScrollView
                             style={styles.paypalModalScroll}
                             contentContainerStyle={styles.paypalContentWrapper}
                             showsVerticalScrollIndicator={false}
                         >
                             <Text style={styles.paypalModalTitle}>Pago con PayPal</Text>
-                            
+
                             <View style={styles.paypalWebView}>
                                 <PayPalCheckout
                                     amount={totalPrice}
@@ -633,9 +633,9 @@ const CartScreen = () => {
                                     onClose={() => console.log('Pago cancelado o ventana cerrada')}
                                 />
                             </View>
-                    
-                            <Button 
-                                mode="outlined" 
+
+                            <Button
+                                mode="outlined"
                                 onPress={() => setSelectedPaymentMethod(null)}
                                 style={styles.paypalBackButton}
                                 labelStyle={styles.paypalBackButtonText}
