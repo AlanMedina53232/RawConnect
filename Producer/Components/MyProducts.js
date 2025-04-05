@@ -10,9 +10,9 @@ import {
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
-    View,
-    TextInput
+    View
 } from "react-native"
 import { db } from "../../config/fb"
 
@@ -28,21 +28,19 @@ const COLORS = {
 }
 const { width } = Dimensions.get("window")
 
-export default function MyProducts  ({ navigation, route }) {
+export default function MyProducts({ navigation, route }) {
     const { userData } = route.params;
 
-const [products, setProducts] = useState([])
-    const [filteredProducts, setFilteredProducts] = useState([]) // Estado para productos filtrados
+    const [products, setProducts] = useState([])
+    const [filteredProducts, setFilteredProducts] = useState([])
     const [loading, setLoading] = useState(true)
-    const [searchText, setSearchText] = useState("") // Estado para el texto de búsqueda
+    const [searchText, setSearchText] = useState("")
 
-    // Get the initialCategory from route params or default to "Agricultural"
     const initialCategory = route.params?.initialCategory || "All"
     const [selectedCategory, setSelectedCategory] = useState(initialCategory)
 
     const categories = ["All"]
 
-    // Update selected category when route params change
     useEffect(() => {
         if (route.params?.initialCategory) {
             setSelectedCategory(route.params.initialCategory)
@@ -55,7 +53,7 @@ const [products, setProducts] = useState([])
 
     useEffect(() => {
         if (searchText.trim() === "") {
-            setFilteredProducts(products) // Si no hay texto de búsqueda, mostrar todos los productos
+            setFilteredProducts(products)
         } else {
             const lowercasedSearchText = searchText.toLowerCase()
             const filtered = products.filter((product) =>
@@ -64,7 +62,7 @@ const [products, setProducts] = useState([])
             )
             setFilteredProducts(filtered)
         }
-    }, [searchText, products]) // Re-filtrar cada vez que cambia el texto de búsqueda o los productos
+    }, [searchText, products])
 
     const fetchProducts = async (category) => {
         try {
@@ -73,26 +71,24 @@ const [products, setProducts] = useState([])
 
             let q
             if (category === "All") {
-                // Fetch all products
                 q = query(productsCollection, where("vendor", "==", userData.email))
-                
-            } 
+
+            }
 
             const querySnapshot = await getDocs(q)
 
-           
+
 
             const productsList = querySnapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
-                // Add default rating if not present
                 rating: doc.data().rating || 4.5,
             }))
 
-           
+
 
             setProducts(productsList)
-            setFilteredProducts(productsList) // Inicialmente, no hay filtro, así que mostramos todos los productos
+            setFilteredProducts(productsList)
         } catch (error) {
             console.error("Error fetching products:", error)
         } finally {
@@ -127,7 +123,6 @@ const [products, setProducts] = useState([])
         navigation.navigate("EditProduct", { product })
     }
 
-    // Update the screen title based on the selected category
     useEffect(() => {
         navigation.setOptions({
             title: selectedCategory === "All" ? "My Products" : `${selectedCategory} Products`,
@@ -142,15 +137,15 @@ const [products, setProducts] = useState([])
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
-                {/* Campo de búsqueda */}
-            <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search products"
-                    value={searchText}
-                    onChangeText={setSearchText} // Actualiza el texto de búsqueda
-                />
-            </View>
+                { }
+                <View style={styles.searchContainer}>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search products"
+                        value={searchText}
+                        onChangeText={setSearchText}
+                    />
+                </View>
             </View>
 
             {loading ? (
@@ -162,7 +157,7 @@ const [products, setProducts] = useState([])
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.productsContainer}>
                     {filteredProducts.length > 0 ? (
                         <>
-                           
+
 
                             <View style={styles.allProductsContainer}>
                                 <Text style={styles.sectionTitle}>

@@ -15,14 +15,12 @@ const ProductManagementScreen = () => {
     const route = useRoute()
     const { userData } = route.params
 
-    // Animation values
     const [fadeAnim] = useState(new Animated.Value(0))
     const [slideAnim1] = useState(new Animated.Value(50))
     const [slideAnim2] = useState(new Animated.Value(50))
     const [slideAnim3] = useState(new Animated.Value(50))
 
     useEffect(() => {
-        // Staggered animations for cards
         Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 600,

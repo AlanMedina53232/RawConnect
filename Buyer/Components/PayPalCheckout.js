@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, ActivityIndicator, Alert, StyleSheet } from 'react-native';
-import { WebView } from 'react-native-webview';
 import axios from 'axios';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 const BACKEND_URL = 'http://192.168.0.127:3001'; // CAMBIAR LA IP A LA DE TU COMPUTADORA, EL PUERTO NO SE CAMBIAA
 
-const PayPalCheckout = ({ amount, onPaymentSuccess, onClose = () => {} }) => {
+const PayPalCheckout = ({ amount, onPaymentSuccess, onClose = () => { } }) => {
   const [approvalUrl, setApprovalUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasCompletedPayment, setHasCompletedPayment] = useState(false);
   const isPaymentFinalized = useRef(false);
   const webViewRef = useRef(null);
 
-  // Si se ha completado el pago o el monto es inválido, no iniciamos el flujo
   useEffect(() => {
     if (hasCompletedPayment) return;
     if (Number(amount) <= 0) {

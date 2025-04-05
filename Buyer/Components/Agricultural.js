@@ -35,17 +35,15 @@ const COLORS = {
 
 export default function Agricultural({ navigation, route }) {
     const [products, setProducts] = useState([])
-    const [filteredProducts, setFilteredProducts] = useState([]) // Estado para productos filtrados
+    const [filteredProducts, setFilteredProducts] = useState([])
     const [loading, setLoading] = useState(true)
-    const [searchText, setSearchText] = useState("") // Estado para el texto de búsqueda
+    const [searchText, setSearchText] = useState("")
 
-    // Get the initialCategory from route params or default to "Agricultural"
     const initialCategory = route.params?.initialCategory || "Agricultural"
     const [selectedCategory, setSelectedCategory] = useState(initialCategory)
 
     const categories = ["All", "Agricultural", "Mineral", "Forestal", "Chemical"]
 
-    // Update selected category when route params change
     useEffect(() => {
         if (route.params?.initialCategory) {
             setSelectedCategory(route.params.initialCategory)
@@ -58,7 +56,7 @@ export default function Agricultural({ navigation, route }) {
 
     useEffect(() => {
         if (searchText.trim() === "") {
-            setFilteredProducts(products) // Si no hay texto de búsqueda, mostrar todos los productos
+            setFilteredProducts(products)
         } else {
             const lowercasedSearchText = searchText.toLowerCase()
             const filtered = products.filter(
@@ -68,24 +66,21 @@ export default function Agricultural({ navigation, route }) {
             )
             setFilteredProducts(filtered)
         }
-    }, [searchText, products]) // Re-filtrar cada vez que cambia el texto de búsqueda o los productos
+    }, [searchText, products])
 
-    // Modificar el useEffect para escuchar los cambios en route.params.refreshProducts
+
     useEffect(() => {
         if (route.params?.refreshProducts) {
             console.log("Refreshing products after review update")
             fetchProducts(selectedCategory)
 
-            // Limpiar el parámetro para evitar refrescos innecesarios
             if (navigation.setParams) {
                 navigation.setParams({ refreshProducts: undefined, updatedProductId: undefined })
             }
         }
     }, [route.params?.refreshProducts])
 
-    // Modificar la función renderStars para mostrar correctamente las calificaciones
     const renderStars = (rating, product) => {
-        // Asegurarse de que rating es un número
         const numericRating = Number.parseFloat(rating) || 0
 
         const stars = []
@@ -113,7 +108,6 @@ export default function Agricultural({ navigation, route }) {
         )
     }
 
-    // Modificar la función fetchProducts para asegurar que se carguen correctamente las calificaciones
     const fetchProducts = async (category) => {
         try {
             setLoading(true)
@@ -121,10 +115,8 @@ export default function Agricultural({ navigation, route }) {
 
             let q
             if (category === "All") {
-                // Fetch all products
                 q = query(productsCollection)
             } else {
-                // Fetch products by category
                 q = query(productsCollection, where("category", "==", category))
             }
 
@@ -132,7 +124,6 @@ export default function Agricultural({ navigation, route }) {
 
             const productsList = querySnapshot.docs.map((doc) => {
                 const data = doc.data()
-                // Asegurarse de que rating y ratingCount sean números
                 return {
                     id: doc.id,
                     ...data,
@@ -162,7 +153,6 @@ export default function Agricultural({ navigation, route }) {
         })
     }
 
-    // Update the screen title based on the selected category
     useEffect(() => {
         navigation.setOptions({
             title: selectedCategory === "All" ? "All Products" : `${selectedCategory} Products`,
@@ -186,13 +176,13 @@ export default function Agricultural({ navigation, route }) {
                 </TouchableOpacity>
             </View>
 
-            {/* Campo de búsqueda */}
+            { }
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search products"
                     value={searchText}
-                    onChangeText={setSearchText} // Actualiza el texto de búsqueda
+                    onChangeText={setSearchText}
                 />
             </View>
 

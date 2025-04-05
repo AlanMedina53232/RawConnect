@@ -64,7 +64,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                             }
                         }
 
-                        // Fetch saved card information
                         await fetchSavedCardInfo()
                     } else {
                         Alert.alert("Not Logged In", "You need to be logged in to view your profile.", [
@@ -80,12 +79,10 @@ const BuyerProfileScreen = ({ route, navigation }) => {
             fetchUserData()
         }
 
-        // Añadir un listener para cuando la pantalla recibe el foco
         const unsubscribeFocus = navigation.addListener("focus", () => {
             fetchSavedCardInfo()
         })
 
-        // Limpiar el listener cuando el componente se desmonta
         return unsubscribeFocus
     }, [route.params?.userData, navigation])
 
@@ -201,7 +198,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                         const userEmail = auth.currentUser.email
                         const cardDocRef = doc(db, "userPaymentMethods", userEmail)
 
-                        // Eliminar completamente el documento de la tarjeta
                         await deleteDoc(cardDocRef)
 
                         setSavedCard(null)
@@ -260,7 +256,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
             const userEmail = auth.currentUser.email
             const cardDocRef = doc(db, "userPaymentMethods", userEmail)
 
-            // Save card information except CVV
             await setDoc(cardDocRef, {
                 cardNumber: newCardInfo.cardNumber,
                 cardHolder: newCardInfo.cardHolder,
@@ -269,7 +264,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                 updatedAt: new Date(),
             })
 
-            // Update local state
             setSavedCard({
                 cardNumber: newCardInfo.cardNumber,
                 cardHolder: newCardInfo.cardHolder,
@@ -277,7 +271,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                 lastFour: newCardInfo.cardNumber.slice(-4),
             })
 
-            // Reset form and close modal
             setNewCardInfo({
                 cardNumber: "",
                 cardHolder: "",
@@ -299,30 +292,23 @@ const BuyerProfileScreen = ({ route, navigation }) => {
             return
         }
 
-        // In a real app, you would verify the CVV with a payment processor
-        // Here we just simulate a successful verification
+
         setCardVerificationVisible(false)
         setCardModalVisible(true)
     }
 
     const formatCardNumber = (text) => {
-        // Remove all non-digit characters
         const cleaned = text.replace(/\D/g, "")
-        // Limit to 16 digits
         const trimmed = cleaned.substring(0, 16)
-        // Format with spaces every 4 digits
         const formatted = trimmed.replace(/(\d{4})(?=\d)/g, "$1 ")
 
         setNewCardInfo({ ...newCardInfo, cardNumber: formatted })
     }
 
     const formatExpiryDate = (text) => {
-        // Remove all non-digit characters
         const cleaned = text.replace(/\D/g, "")
-        // Limit to 4 digits
         const trimmed = cleaned.substring(0, 4)
 
-        // Format as MM/YY
         if (trimmed.length > 2) {
             const formatted = `${trimmed.substring(0, 2)}/${trimmed.substring(2)}`
             setNewCardInfo({ ...newCardInfo, expiryDate: formatted })
@@ -331,7 +317,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
         }
     }
 
-    // Format the createdAt timestamp
     const formatDate = (timestamp) => {
         if (!timestamp) return "N/A"
 
@@ -377,7 +362,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
 
     return (
         <View style={styles.container}>
-            {/* Top Bar for opening sidebar */}
             <View style={styles.topBar}>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
@@ -466,7 +450,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                 </View>
             </ScrollView>
 
-            {/* Modal for CVV verification */}
             <Portal>
                 <Modal
                     visible={cardVerificationVisible}
@@ -500,7 +483,6 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                 </Modal>
             </Portal>
 
-            {/* Modal for adding/changing card */}
             <Portal>
                 <Modal
                     visible={cardModalVisible}
@@ -516,7 +498,7 @@ const BuyerProfileScreen = ({ route, navigation }) => {
                         onChangeText={formatCardNumber}
                         style={styles.input}
                         keyboardType="numeric"
-                        maxLength={19} // 16 digits + 3 spaces
+                        maxLength={19}
                         error={!!errors.cardNumber}
                         left={<TextInput.Icon icon="credit-card" />}
                     />
@@ -597,9 +579,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingVertical: 15,
-        paddingTop: Platform.OS === "ios" ? 60 : 25, // Aumentado el padding superior
+        paddingTop: Platform.OS === "ios" ? 60 : 25,
         backgroundColor: "#2c3e50",
-        height: Platform.OS === "ios" ? 100 : 70, // Altura explícita para la barra superior
+        height: Platform.OS === "ios" ? 100 : 70,
     },
     menuButton: {
         padding: 8,
@@ -612,7 +594,7 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         textAlign: "center",
         flex: 1,
-        marginTop: Platform.OS === "ios" ? 0 : 5, // Pequeño ajuste para Android
+        marginTop: Platform.OS === "ios" ? 0 : 5,
     },
     scrollContainer: {
         flex: 1,

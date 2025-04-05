@@ -56,7 +56,7 @@ const MyOrdersScreen = () => {
             }
 
             const userEmail = auth.currentUser.email
-            let ordersQuery = userRole === 1 
+            let ordersQuery = userRole === 1
                 ? query(collection(db, "orders"), where("buyerEmail", "==", userEmail))
                 : query(collection(db, "orders"), where("vendorEmail", "==", userEmail))
 
@@ -98,7 +98,7 @@ const MyOrdersScreen = () => {
                 updatedAt: new Date(),
             })
 
-            setOrders(orders.map(order => 
+            setOrders(orders.map(order =>
                 order.id === orderId ? { ...order, status: newStatus } : order
             ))
 
@@ -203,12 +203,12 @@ const MyOrdersScreen = () => {
             )
         }
 
-        return userRole === 2 
-            ? producerActions[order.status] 
-            : order.status === "delivered" 
-                ? buyerActions.delivered 
-                : ["cancelled", "finalized", "not_received"].includes(order.status) 
-                    ? null 
+        return userRole === 2
+            ? producerActions[order.status]
+            : order.status === "delivered"
+                ? buyerActions.delivered
+                : ["cancelled", "finalized", "not_received"].includes(order.status)
+                    ? null
                     : buyerActions.default
     }
 

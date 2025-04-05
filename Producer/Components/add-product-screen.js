@@ -67,11 +67,9 @@ const AddProductScreen = () => {
     })
 
     const updateProduct = (field, value) => {
-        // Clear quantity error when updating quantity
         if (field === "quantity") {
             setQuantityError("")
 
-            // Validate quantity is a positive number
             const numValue = Number.parseFloat(value)
             if (value && (isNaN(numValue) || numValue <= 0)) {
                 setQuantityError("Quantity must be a positive number")
@@ -94,7 +92,6 @@ const AddProductScreen = () => {
             isValid = false
         }
 
-        // Validate quantity
         const quantity = Number.parseFloat(product.quantity)
         if (!product.quantity || isNaN(quantity) || quantity <= 0) {
             setQuantityError("Please enter a valid quantity greater than 0")
@@ -137,7 +134,6 @@ const AddProductScreen = () => {
     }
 
 
-    // Group unit measures by category for the menu
     const groupedUnitMeasures = unitMeasures.reduce((acc, unit) => {
         if (!acc[unit.category]) {
             acc[unit.category] = []

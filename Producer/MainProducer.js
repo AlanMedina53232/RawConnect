@@ -42,7 +42,6 @@ const MainProducer = () => {
       console.error("Error fetching user data:", error)
     } finally {
       setLoading(false)
-      // Start animations after data is loaded
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -58,12 +57,10 @@ const MainProducer = () => {
     }
   }
 
-  // Se ejecuta una sola vez al montar el componente
   useEffect(() => {
     fetchUserData()
   }, [])
 
-  // Se ejecuta cada vez que la pantalla gana foco
   useFocusEffect(
     useCallback(() => {
       fetchUserData()

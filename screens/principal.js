@@ -25,7 +25,7 @@ const Principal = ({ navigation }) => {
         style={styles.container}
       >
         <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-          {/* Contenedor del logo mejorado */}
+          { }
           <View style={styles.logoContainer}>
             <Image
               source={require('../assets/logo2.png')}

@@ -36,7 +36,6 @@ const COLORS = {
     danger: "#F44336",
 }
 
-// Map unit values to readable labels
 const unitLabels = {
     ud: "Units",
     box: "Boxes",
@@ -61,7 +60,7 @@ const unitLabels = {
 export default function ProductDetails({ route, navigation }) {
     const { product } = route.params
     const [quantity, setQuantity] = useState(1)
-    const [stockStatus, setStockStatus] = useState("high") // high, medium, low
+    const [stockStatus, setStockStatus] = useState("high")
     const [reviews, setReviews] = useState([])
     const [averageRating, setAverageRating] = useState(0)
     const [canReview, setCanReview] = useState(false)
@@ -72,16 +71,13 @@ export default function ProductDetails({ route, navigation }) {
     })
     const [userHasReviewed, setUserHasReviewed] = useState(false)
     const [loading, setLoading] = useState(true)
-    // Añadir un estado para controlar el procesamiento de la reseña
     const [processingReview, setProcessingReview] = useState(false)
 
     useEffect(() => {
-        // Limpiar el estado de reseñas cuando cambia el producto
         setReviews([])
         setAverageRating(0)
         setLoading(true)
 
-        // Determine stock status based on available quantity
         if (product.quantity) {
             if (product.quantity < 10) {
                 setStockStatus("low")
@@ -92,34 +88,27 @@ export default function ProductDetails({ route, navigation }) {
             }
         }
 
-        // Fetch reviews for this product
         fetchReviews()
 
-        // Check if user can review this product
         checkIfUserCanReview()
-    }, [product.id]) // Cambiar la dependencia a product.id específicamente
+    }, [product.id])
 
-    // Añadir un useEffect para actualizar el estado cuando se vuelve a la pantalla
     useEffect(() => {
         const unsubscribeFocus = navigation.addListener("focus", () => {
-            // Limpiar el estado de reseñas cuando la pantalla recibe el foco
             setReviews([])
             setAverageRating(0)
 
-            // Refrescar las reseñas y verificar elegibilidad cuando la pantalla recibe el foco
             fetchReviews()
             checkIfUserCanReview()
         })
 
         return unsubscribeFocus
-    }, [navigation, product.id]) // Añadir product.id como dependencia
+    }, [navigation, product.id])
 
-    // Modificar la función fetchReviews para mejorar el manejo de errores y la limpieza
     const fetchReviews = async () => {
         try {
             console.log("Fetching reviews for product ID:", product.id)
 
-            // Asegurarse de que product.id existe antes de hacer la consulta
             if (!product.id) {
                 console.error("Product ID is undefined or null")
                 setReviews([])
@@ -149,7 +138,6 @@ export default function ProductDetails({ route, navigation }) {
                 setAverageRating(0)
             }
 
-            // Check if current user has already reviewed this product
             if (auth.currentUser) {
                 const userReviewExists = reviewsData.some((review) => review.userId === auth.currentUser.email)
                 setUserHasReviewed(userReviewExists)
@@ -163,7 +151,6 @@ export default function ProductDetails({ route, navigation }) {
         }
     }
 
-    // Modificar la función checkIfUserCanReview para verificar correctamente si el usuario ya ha dejado una reseña
     const checkIfUserCanReview = async () => {
         if (!auth.currentUser) {
             setCanReview(false)
@@ -171,7 +158,6 @@ export default function ProductDetails({ route, navigation }) {
         }
 
         try {
-            // Primero verificar si el usuario ya ha dejado una reseña para este producto
             const userReviewsQuery = query(
                 collection(db, "reviews"),
                 where("productId", "==", product.id),
@@ -181,14 +167,12 @@ export default function ProductDetails({ route, navigation }) {
             const userReviewsSnapshot = await getDocs(userReviewsQuery)
 
             if (!userReviewsSnapshot.empty) {
-                // El usuario ya ha dejado una reseña
                 setUserHasReviewed(true)
                 setCanReview(false)
                 console.log("User has already reviewed this product")
                 return
             }
 
-            // Si no ha dejado reseña, verificar si tiene un pedido finalizado con este producto
             const ordersQuery = query(collection(db, "orders"), where("buyerEmail", "==", auth.currentUser.email))
 
             const querySnapshot = await getDocs(ordersQuery)
@@ -197,7 +181,6 @@ export default function ProductDetails({ route, navigation }) {
             querySnapshot.forEach((orderDoc) => {
                 const orderData = orderDoc.data()
 
-                // Check if this order contains the current product and is finalized
                 if (orderData.status === "finalized" || orderData.status === "finalizado") {
                     const hasProduct = orderData.items && orderData.items.some((item) => item.productId === product.id)
 
@@ -207,7 +190,6 @@ export default function ProductDetails({ route, navigation }) {
                 }
             })
 
-            // User can review if they have a finalized order with this product and haven't already reviewed it
             setCanReview(canUserReview)
 
             console.log("Can user review:", canUserReview, "Has already reviewed:", userHasReviewed)
@@ -217,7 +199,6 @@ export default function ProductDetails({ route, navigation }) {
         }
     }
 
-    // Modificar la función handleSubmitReview para asegurar que el productId se guarde correctamente
     const handleSubmitReview = async () => {
         if (!auth.currentUser) {
             Alert.alert("Error", "You must be logged in to submit a review")
@@ -232,7 +213,6 @@ export default function ProductDetails({ route, navigation }) {
         try {
             setProcessingReview(true)
 
-            // Verificar que el product.id existe
             if (!product.id) {
                 Alert.alert("Error", "Product ID is missing. Cannot submit review.")
                 return
@@ -240,7 +220,6 @@ export default function ProductDetails({ route, navigation }) {
 
             console.log("Submitting review for product ID:", product.id)
 
-            // Add review to Firestore with the correct productId
             await addDoc(collection(db, "reviews"), {
                 productId: product.id,
                 userId: auth.currentUser.email,
@@ -250,7 +229,6 @@ export default function ProductDetails({ route, navigation }) {
                 createdAt: new Date(),
             })
 
-            // Update product with new rating
             const productRef = doc(db, "products", product.id)
             const productDoc = await getDoc(productRef)
 
@@ -268,16 +246,13 @@ export default function ProductDetails({ route, navigation }) {
                 })
             }
 
-            // Reset form and close modal
             setUserReview({ rating: 0, comment: "" })
             setReviewModalVisible(false)
 
-            // Refresh reviews
             fetchReviews()
             setUserHasReviewed(true)
             setCanReview(false)
 
-            // Notificar a la pantalla Agricultural que debe actualizarse
             if (navigation.setParams) {
                 navigation.setParams({ refreshProducts: true, updatedProductId: product.id })
             }
@@ -291,7 +266,6 @@ export default function ProductDetails({ route, navigation }) {
         }
     }
 
-    // Format the createdAt timestamp
     const formatDate = (timestamp) => {
         if (!timestamp) return "N/A"
 
@@ -308,7 +282,6 @@ export default function ProductDetails({ route, navigation }) {
         }
     }
 
-    // Parse specifications if it's a string
     const getSpecifications = () => {
         if (!product.specifications) return {}
 
@@ -316,7 +289,6 @@ export default function ProductDetails({ route, navigation }) {
             try {
                 return JSON.parse(product.specifications)
             } catch (e) {
-                // If it's not valid JSON, return it as a single specification
                 return { Details: product.specifications }
             }
         }
@@ -359,7 +331,6 @@ export default function ProductDetails({ route, navigation }) {
                 return
             }
 
-            // Check if the item is already in the cart
             const cartQuery = query(
                 collection(db, "cart"),
                 where("userEmail", "==", auth.currentUser.email),
@@ -369,7 +340,6 @@ export default function ProductDetails({ route, navigation }) {
             const querySnapshot = await getDocs(cartQuery)
 
             if (!querySnapshot.empty) {
-                // Item already in cart, update quantity
                 const cartItem = querySnapshot.docs[0]
                 const currentQuantity = cartItem.data().quantity
                 const newQuantity = currentQuantity + quantity
@@ -388,7 +358,6 @@ export default function ProductDetails({ route, navigation }) {
 
                 Alert.alert("Success", `Updated quantity in cart to ${newQuantity} ${getUnitLabel()}`)
             } else {
-                // Add new item to cart
                 await addDoc(collection(db, "cart"), {
                     userEmail: auth.currentUser.email,
                     productId: product.id,
@@ -418,7 +387,7 @@ export default function ProductDetails({ route, navigation }) {
     const getStockColor = () => {
         switch (stockStatus) {
             case "high":
-                return "#6bb2db" // Changed from COLORS.success to blue
+                return "#6bb2db"
             case "medium":
                 return COLORS.warning
             case "low":
@@ -441,18 +410,15 @@ export default function ProductDetails({ route, navigation }) {
         }
     }
 
-    // Verificar si la cantidad es mayor o igual a la cantidad del producto
     const isMaxQuantity = () => {
         if (!product.quantity) return false
         return quantity >= product.quantity
     }
 
-    // Verificar si el producto está fuera de stock
     const isOutOfStock = () => {
         return !product.quantity || product.quantity === 0
     }
 
-    // Render star rating component
     const renderStars = (rating, size = 16, interactive = false) => {
         return (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -477,7 +443,6 @@ export default function ProductDetails({ route, navigation }) {
         )
     }
 
-    // Render review item
     const renderReviewItem = (review) => {
         return (
             <Card key={review.id} style={styles.reviewCard}>
@@ -545,12 +510,12 @@ export default function ProductDetails({ route, navigation }) {
                         <Text style={styles.productPrice}>${product.price}</Text>
                     </View>
 
-                    {/* Stock Status Card */}
+                    { }
                     <Card style={[styles.stockCard, { borderLeftColor: "#2C3E50", backgroundColor: "#f9fbfc" }]}>
                         <Card.Content style={styles.stockCardContent}>
                             <View style={styles.stockInfo}>
                                 <MaterialCommunityIcons
-                                    name="storefront" // Cambia este icono por el que prefieras
+                                    name="storefront"
                                     size={24}
                                     color="#2C3E50"
                                 />
@@ -624,7 +589,7 @@ export default function ProductDetails({ route, navigation }) {
 
                     <View style={styles.divider} />
 
-                    {/* Reviews Section */}
+                    { }
                     <View style={styles.sectionContainer}>
                         <View style={styles.reviewsHeader}>
                             <Text style={styles.sectionTitle}>Customer Reviews</Text>
@@ -666,7 +631,7 @@ export default function ProductDetails({ route, navigation }) {
                 </View>
             </LinearGradient>
 
-            {/* Review Modal */}
+            { }
             <Portal>
                 <Modal
                     visible={reviewModalVisible}

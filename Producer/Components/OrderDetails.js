@@ -1,9 +1,9 @@
 "use client"
-import React, { useEffect, useState } from 'react'
-import { ScrollView, StyleSheet, View, TextInput, Alert } from "react-native"
-import { Card, Text, IconButton, Divider, useTheme, Button, Menu, Portal, Dialog } from "react-native-paper"
 import { useNavigation, useRoute } from "@react-navigation/native"
-import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore"
+import { doc, getDoc, getFirestore, updateDoc } from "firebase/firestore"
+import React, { useEffect, useState } from 'react'
+import { Alert, ScrollView, StyleSheet, TextInput, View } from "react-native"
+import { Button, Card, Dialog, Divider, Menu, Portal, Text, useTheme } from "react-native-paper"
 
 const OrderDetails = () => {
     const theme = useTheme()
@@ -40,7 +40,7 @@ const OrderDetails = () => {
                     { label: 'Mark as Delivered', value: 'delivered' }
                 ];
             default:
-                return []; // No options for rejected or delivered orders
+                return [];
         }
     }
 
@@ -62,7 +62,7 @@ const OrderDetails = () => {
         try {
             const userRef = doc(db, "users", email)
             const userSnap = await getDoc(userRef)
-            
+
             if (userSnap.exists()) {
                 const userData = userSnap.data()
                 setCustomerData({
@@ -146,9 +146,9 @@ const OrderDetails = () => {
 
             await updateDoc(orderRef, updateData)
             setOrder(prev => ({ ...prev, ...updateData }))
-            
+
             Alert.alert('Success', `Order status updated to ${newStatus}`)
-            
+
         } catch (error) {
             console.error("Error updating order status:", error)
             Alert.alert('Error', "Failed to update status")
@@ -169,7 +169,7 @@ const OrderDetails = () => {
             case 'rejected': return '#F44336'
             case 'shipped': return '#2196F3'
             case 'delivered': return '#673AB7'
-            case "finalized":return "#4CAF50"
+            case "finalized": return "#4CAF50"
             case 'pending': return '#FFC107'
             default: return '#9E9E9E'
         }
@@ -197,7 +197,7 @@ const OrderDetails = () => {
                 <Card style={styles.detailsCard}>
                     <Card.Content>
                         <Text style={styles.orderId}>Order #{orderId.substring(0, 8)}...</Text>
-                        
+
                         <View style={styles.statusContainer}>
                             <Text style={[styles.status, { color: getStatusColor(order.status) }]}>
                                 Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -207,14 +207,14 @@ const OrderDetails = () => {
                                     </Text>
                                 )}
                             </Text>
-                            
+
                             {availableStatusOptions.length > 0 && (
                                 <Menu
                                     visible={statusMenuVisible}
                                     onDismiss={() => setStatusMenuVisible(false)}
                                     anchor={
-                                        <Button 
-                                            mode="contained" 
+                                        <Button
+                                            mode="contained"
                                             onPress={() => setStatusMenuVisible(true)}
                                             loading={updatingStatus}
                                             style={styles.statusButton}
@@ -236,8 +236,8 @@ const OrderDetails = () => {
                         </View>
 
                         <Portal>
-                            <Dialog 
-                                visible={rejectionDialogVisible} 
+                            <Dialog
+                                visible={rejectionDialogVisible}
                                 onDismiss={() => setRejectionDialogVisible(false)}
                             >
                                 <Dialog.Title>Rejection Reason</Dialog.Title>
@@ -256,7 +256,7 @@ const OrderDetails = () => {
                                     <Button onPress={() => setRejectionDialogVisible(false)}>
                                         Cancel
                                     </Button>
-                                    <Button 
+                                    <Button
                                         onPress={confirmRejection}
                                         mode="contained"
                                         disabled={!rejectionReason.trim()}

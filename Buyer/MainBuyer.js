@@ -56,7 +56,6 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     fetchCartItemCount()
 
-    // Set up a listener for when the screen comes into focus
     const unsubscribe = navigation.addListener("focus", () => {
       fetchCartItemCount()
     })
@@ -78,7 +77,6 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-  // Function to navigate to Agricultural with the selected category
   const navigateToCategory = (category) => {
     navigation.navigate("Agricultural", { initialCategory: category })
   }
@@ -134,7 +132,7 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Sección informativa sobre RawConnect (reemplazando Featured Products) */}
+        { }
         <View style={styles.aboutSection}>
           <Text style={styles.aboutTitle}>About RawConnect</Text>
 
@@ -212,7 +210,6 @@ const DrawerContent = (props) => {
   useEffect(() => {
     fetchCartItemCount()
 
-    // Añadir un listener para cuando el drawer se abre
     const unsubscribeFocus = props.navigation.addListener("focus", () => {
       fetchCartItemCount()
     })
@@ -234,7 +231,6 @@ const DrawerContent = (props) => {
     }
   }
 
-  // Resto del código...
 
   return (
     <GradientBackground colors={["#2c3e50", "#34495e"]} style={styles.drawerContent}>
@@ -307,7 +303,6 @@ const MainBuyer = () => {
         component={ProductDetails}
         options={{
           title: "Product Details",
-          // Make sure headerShown is true for this screen
           headerShown: false,
         }}
       />

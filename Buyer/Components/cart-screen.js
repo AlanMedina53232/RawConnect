@@ -37,7 +37,6 @@ const CartScreen = () => {
     const [loading, setLoading] = useState(true)
     const [totalPrice, setTotalPrice] = useState(0)
     const [checkoutModalVisible, setCheckoutModalVisible] = useState(false)
-    // Estado para seleccionar el método de pago: null, "card" o "paypal"
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
     const [paymentInfo, setPaymentInfo] = useState({
         cardNumber: "",
@@ -50,7 +49,6 @@ const CartScreen = () => {
     const [errors, setErrors] = useState({})
     const [processingPayment, setProcessingPayment] = useState(false)
 
-    // Funciones de manejo de pago (éxito y cancelación)
     const handlePaymentSuccess = () => {
         setCartItems([])
         Alert.alert('Éxito', 'Tu pedido ha sido realizado.')
@@ -218,7 +216,6 @@ const CartScreen = () => {
         }
     }
 
-    // Método para pago con tarjeta
     const handleCheckout = async () => {
         if (!validatePaymentInfo()) return
         try {
@@ -286,7 +283,6 @@ const CartScreen = () => {
         }
     }
 
-    // Método para pago con PayPal
     const handlePayPalPaymentSuccess = async (paymentDetails) => {
         try {
             setProcessingPayment(true);
@@ -295,15 +291,12 @@ const CartScreen = () => {
                 return;
             }
 
-            // Extraer los detalles de pago
             const details = paymentDetails.data ? paymentDetails.data : paymentDetails;
             console.log("Detalles de pago:", details);
 
-            // Obtener datos del comprador desde Firebase
             const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
             const userData = userDoc.data();
 
-            // Crear órdenes por vendedor
             const itemsByVendor = groupItemsByVendor();
 
             for (const vendorEmail in itemsByVendor) {
@@ -316,14 +309,13 @@ const CartScreen = () => {
                     vendorTotal,
                     paymentMethod: "PayPal",
                     paymentDetails: {
-                        transactionId: details.id,                        // ID de la transacción
-                        payerEmail: details.payer?.email_address,         // Extraemos el correo desde details.payer.email_address
-                        amount: details.total                             // Monto total
+                        transactionId: details.id,
+                        payerEmail: details.payer?.email_address,
+                        amount: details.total
                     }
                 });
             }
 
-            // Limpiar carrito y mostrar confirmación
             await clearCart();
             showSuccessAlert();
 
@@ -336,7 +328,6 @@ const CartScreen = () => {
     };
 
 
-    // Nuevas funciones auxiliares
     const groupItemsByVendor = () => {
         return cartItems.reduce((acc, item) => {
             if (!acc[item.vendorEmail]) acc[item.vendorEmail] = [];
@@ -354,7 +345,6 @@ const CartScreen = () => {
             createdAt: new Date(),
         });
 
-        // Actualizar inventario
         await Promise.all(orderData.vendorItems.map(async (item) => {
             const productRef = doc(db, "products", item.productId);
             await updateDoc(productRef, {

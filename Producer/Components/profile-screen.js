@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
+import { signOut } from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { MaskedTextInput } from "react-native-mask-text";
 import { Avatar, Button, Divider, Text, TextInput, useTheme } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { MaskedTextInput } from "react-native-mask-text";
 import ImageUploader from "../../components/ImageUploader.js";
 import { auth, db } from "../../config/fb.js";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { signOut } from "firebase/auth";
 
 const ProfileScreen = ({ route, navigation }) => {
   const theme = useTheme();
@@ -105,7 +104,6 @@ const ProfileScreen = ({ route, navigation }) => {
     }, [])
   );
 
-  // Callback llamado cuando ImageUploader finaliza la subida
   const handleImageUploaded = async (imageUrl) => {
     setUserData(prev => ({ ...prev, profileImage: imageUrl }));
     if (auth && auth.currentUser) {
@@ -258,13 +256,12 @@ const ProfileScreen = ({ route, navigation }) => {
           <Icon name={isEditing ? "check" : "pencil"} size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
-      
-      {/* Modal para el ImageUploader */}
+
       <Modal visible={showUploader} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Sube una nueva imagen</Text>
-            <ImageUploader 
+            <ImageUploader
               uploadPreset="rawcn_users"  // Reemplaza con tu preset real
               onUploadComplete={handleImageUploaded}  // Nota: usamos onUploadComplete según tu componente
             />
@@ -274,7 +271,7 @@ const ProfileScreen = ({ route, navigation }) => {
           </View>
         </View>
       </Modal>
-      
+
       <View style={styles.content}>
         {renderField("account", "Full Name", userData.fullName, "fullName")}
         {renderField("email", "Email", userData.email, "email")}

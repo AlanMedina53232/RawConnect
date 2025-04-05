@@ -8,7 +8,6 @@ import { Dimensions, StyleSheet, View } from "react-native";
 import { SceneMap, TabView } from "react-native-tab-view";
 import Reg from "../components/formReg";
 
-// Configurar el tema personalizado
 const theme = extendTheme({
   colors: {
     cyan: {
@@ -123,7 +122,7 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white', // Fondo blanco sólido
+    backgroundColor: 'white',
     paddingTop: 50,
   },
   content: {
@@ -140,10 +139,10 @@ const styles = StyleSheet.create({
   },
   glassCard: {
     width: '100%',
-    backgroundColor: 'white', // Blanco sólido
+    backgroundColor: 'white',
     borderRadius: 25,
     padding: 30,
-    shadowColor: '#rgba(0, 0, 0, 0.1)', // Sombra más neutral
+    shadowColor: '#rgba(0, 0, 0, 0.1)',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 30,
