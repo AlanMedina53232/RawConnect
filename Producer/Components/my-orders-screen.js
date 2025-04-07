@@ -1,7 +1,7 @@
 "use client"
 import { useNavigation } from "@react-navigation/native"
 import { getAuth } from "firebase/auth"
-import { collection, doc, getDoc, getDocs, getFirestore, query, where } from "firebase/firestore"
+import { collection, doc, getDoc, getFirestore, query, where, getDocs } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import { Alert, ScrollView, StyleSheet, View } from "react-native"
 import { Button, Card, IconButton, Menu, Text, useTheme } from "react-native-paper"
@@ -17,6 +17,7 @@ const MyOrdersScreen = () => {
     const [statusFilter, setStatusFilter] = useState("all")
     const [menuVisible, setMenuVisible] = useState(false)
     const [debugInfo, setDebugInfo] = useState("")
+    const [allVendorEmails, setAllVendorEmails] = useState([])
 
     const statusOptions = [
         { label: "All", value: "all" },
@@ -29,28 +30,35 @@ const MyOrdersScreen = () => {
     ]
 
     const auth = getAuth()
-    const user = auth.currentUser
+    const [currentUser, setCurrentUser] = useState(null)
 
     useEffect(() => {
-        if (user) {
-            console.log("Usuario autenticado:", user.email)
-            fetchOrders(user.email)
-        } else {
-            console.log("No hay usuario autenticado")
-            setDebugInfo("No hay usuario autenticado")
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log("Usuario autenticado:", user.email)
+                setCurrentUser(user)
+                setDebugInfo(`Usuario: ${user.email}\nUID: ${user.uid}`)
+                fetchOrders(user.email)
+            } else {
+                console.log("No autenticado - redirigiendo a login")
+                navigation.navigate("Login")
+            }
+        })
+
+        return unsubscribe
+    }, [navigation])
+
+    useEffect(() => {
+        if (currentUser) {
+            const filtered =
+                statusFilter === "all"
+                    ? orders.filter((order) =>
+                        ["pending", "accepted", "rejected", "shipped", "delivered", "finalized"].includes(order.status),
+                    )
+                    : orders.filter((order) => order.status === statusFilter)
+            setFilteredOrders(filtered)
         }
-    }, [user])
-
-    useEffect(() => {
-        const filtered =
-            statusFilter === "all"
-                ? orders.filter((order) =>
-                    ["pending", "accepted", "rejected", "shipped", "delivered", "finalized"].includes(order.status),
-                )
-                : orders.filter((order) => order.status === statusFilter)
-        setFilteredOrders(filtered)
-        console.log(`Órdenes filtradas: ${filtered.length} con filtro: ${statusFilter}`)
-    }, [statusFilter, orders])
+    }, [statusFilter, orders, currentUser])
 
     const fetchCustomerName = async (email) => {
         const db = getFirestore()
@@ -63,108 +71,123 @@ const MyOrdersScreen = () => {
             }
             return email
         } catch (error) {
-            console.error("Error fetching customer name:", error)
+            console.error("Error obteniendo nombre:", error)
             return email
         }
     }
 
     const fetchOrders = async (vendorEmail) => {
+        if (!vendorEmail) return
+        
         setLoading(true)
         const db = getFirestore()
-        const ordersRef = collection(db, "orders")
-
-        console.log(`Buscando órdenes para vendorEmail: ${vendorEmail}`)
-        setDebugInfo((prev) => prev + `\nBuscando órdenes para: ${vendorEmail}`)
+        
+        console.log("Buscando órdenes para:", vendorEmail)
+        setDebugInfo(prev => `${prev}\nConsultando órdenes para: ${vendorEmail}`)
 
         try {
+            // 1. Obtener todas las órdenes
             const allOrdersQuery = query(collection(db, "orders"))
-            const allOrdersSnapshot = await getDocs(allOrdersQuery)
-            console.log(`Total de órdenes en la base de datos: ${allOrdersSnapshot.size}`)
-            setDebugInfo((prev) => prev + `\nTotal de órdenes en DB: ${allOrdersSnapshot.size}`)
+            const querySnapshot = await getDocs(allOrdersQuery)
+            
+            // 2. Recopilar todos los emails de vendedor para diagnóstico
+            const emailsFound = querySnapshot.docs
+                .map(doc => doc.data().vendorEmail)
+                .filter(email => email)
+            
+            const uniqueEmails = [...new Set(emailsFound)]
+            setAllVendorEmails(uniqueEmails)
+            
+            // 3. Filtrar localmente ignorando mayúsculas/minúsculas
+            const filteredOrders = querySnapshot.docs.filter(doc => {
+                const orderData = doc.data()
+                return orderData.vendorEmail && 
+                       orderData.vendorEmail.toLowerCase() === vendorEmail.toLowerCase()
+            })
 
-            const q = query(ordersRef, where("vendorEmail", "==", vendorEmail))
-            const querySnapshot = await getDocs(q)
-
-            console.log(`Órdenes encontradas para ${vendorEmail}: ${querySnapshot.size}`)
-            setDebugInfo((prev) => prev + `\nÓrdenes encontradas: ${querySnapshot.size}`)
-
-            if (querySnapshot.empty) {
-                const vendorEmails = new Set()
-                allOrdersSnapshot.forEach((doc) => {
-                    const data = doc.data()
-                    if (data.vendorEmail) {
-                        vendorEmails.add(data.vendorEmail)
-                    }
-                })
-                console.log("VendorEmails existentes:", Array.from(vendorEmails))
-                setDebugInfo((prev) => prev + `\nVendorEmails existentes: ${Array.from(vendorEmails).join(", ")}`)
-            }
+            console.log("Órdenes encontradas:", filteredOrders.length)
+            setDebugInfo(prev => `${prev}\nTotal órdenes: ${filteredOrders.length}`)
 
             const ordersData = []
             const namesCache = {}
 
-            for (const doc of querySnapshot.docs) {
+            // Procesar cada documento filtrado
+            for (const docSnap of filteredOrders) {
+                const orderData = docSnap.data()
                 const order = {
-                    id: doc.id,
-                    ...doc.data(),
+                    id: docSnap.id,
+                    ...orderData,
+                    items: orderData.items || []
                 }
+
                 ordersData.push(order)
 
-                if (!namesCache[order.buyerEmail]) {
-                    namesCache[order.buyerEmail] = await fetchCustomerName(order.buyerEmail)
+                if (orderData.buyerEmail && !namesCache[orderData.buyerEmail]) {
+                    namesCache[orderData.buyerEmail] = await fetchCustomerName(orderData.buyerEmail)
                 }
             }
 
+            // Ordenar por fecha más reciente primero
+            ordersData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))
+
             setOrders(ordersData)
             setCustomerNames(namesCache)
+            
+            if (filteredOrders.length === 0) {
+                setDebugInfo(prev => `${prev}\nADVERTENCIA: No se encontraron órdenes`)
+                setDebugInfo(prev => `${prev}\nEmails de vendedor en sistema: ${uniqueEmails.join(", ")}`)
+            }
         } catch (error) {
-            console.error("Error getting orders:", error)
-            setDebugInfo((prev) => prev + `\nError: ${error.message}`)
-            Alert.alert("Error", `Failed to load orders: ${error.message}`)
+            console.error("Error al obtener órdenes:", error)
+            setDebugInfo(prev => `${prev}\nERROR: ${error.message}`)
+            
+            if (error.code === 'failed-precondition') {
+                Alert.alert(
+                    "Error de consulta", 
+                    "Necesitas crear un índice en Firestore para esta consulta. " +
+                    "Ve a la consola de Firebase > Firestore > Índices y crea un índice para 'orders' con 'vendorEmail'."
+                )
+            } else {
+                Alert.alert("Error", `No se pudieron cargar las órdenes: ${error.message}`)
+            }
         } finally {
             setLoading(false)
         }
     }
 
     const formatDate = (timestamp) => {
-        if (!timestamp || !timestamp.toDate) {
-            return "Invalid date"
-        }
+        if (!timestamp?.toDate) return "Fecha no disponible"
         try {
-            const date = timestamp.toDate()
-            return date.toLocaleDateString()
+            return timestamp.toDate().toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })
         } catch (error) {
-            console.error("Error formatting date:", error)
-            return "Invalid date"
+            console.error("Error formateando fecha:", error)
+            return "Fecha inválida"
         }
     }
 
-    const getProductsSummary = (items) => {
-        if (!items || items.length === 0) return "No products"
-
+    const getProductsSummary = (items = []) => {
+        if (items.length === 0) return "Sin productos"
         if (items.length === 1) {
             return `${items[0].productName} (${items[0].quantity} ${items[0].unitMeasure})`
         }
-
-        return `${items.length} products`
+        return `${items.length} productos`
     }
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case "accepted":
-                return "#4CAF50"
-            case "rejected":
-                return "#F44336"
-            case "pending":
-                return "#FFC107"
-            case "shipped":
-                return "#2196F3"
-            case "delivered":
-                return "#673AB7"
-            case "finalized":
-                return "#4CAF50"
-            default:
-                return "#000000"
+        switch (status?.toLowerCase()) {
+            case "accepted": return "#4CAF50"
+            case "rejected": return "#F44336"
+            case "pending": return "#FFC107"
+            case "shipped": return "#2196F3"
+            case "delivered": return "#673AB7"
+            case "finalized": return "#4CAF50"
+            default: return "#9E9E9E"
         }
     }
 
@@ -175,20 +198,22 @@ const MyOrdersScreen = () => {
             onPress={() => navigation.navigate("OrderDetails", { orderId: order.id })}
         >
             <Card.Content>
-                <Text style={styles.orderTitle}>Order #{order.id.substring(0, 8)}...</Text>
-                <Text>Date: {formatDate(order.createdAt)}</Text>
-                <Text>Products: {getProductsSummary(order.items)}</Text>
-                <Text>Customer: {customerNames[order.buyerEmail] || order.buyerEmail}</Text>
-                <Text style={{ color: getStatusColor(order.status) }}>
-                    Status: {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                <Text style={styles.orderTitle}>Orden #{order.id.substring(0, 8)}</Text>
+                <Text style={styles.orderText}>Fecha: {formatDate(order.createdAt)}</Text>
+                <Text style={styles.orderText}>Productos: {getProductsSummary(order.items)}</Text>
+                <Text style={styles.orderText}>Cliente: {customerNames[order.buyerEmail] || order.buyerEmail}</Text>
+                <Text style={[styles.orderText, { color: getStatusColor(order.status) }]}>
+                    Estado: {order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
                 </Text>
-                <Text>Total: ${order.totalAmount?.toLocaleString() || "0"}</Text>
+                <Text style={styles.orderText}>Total: ${order.totalAmount?.toLocaleString() || "0"}</Text>
 
                 {order.paymentDetails && (
                     <View style={styles.paymentDetails}>
-                        <Text style={styles.paymentTitle}>Payment Details:</Text>
-                        <Text>Method: {order.paymentMethod || "Credit Card"}</Text>
-                        {order.paymentDetails.cardLast4 && <Text>Card: •••• {order.paymentDetails.cardLast4}</Text>}
+                        <Text style={styles.paymentTitle}>Detalles de pago:</Text>
+                        <Text style={styles.orderText}>Método: {order.paymentMethod || "Tarjeta"}</Text>
+                        {order.paymentDetails.cardLast4 && (
+                            <Text style={styles.orderText}>Tarjeta: •••• {order.paymentDetails.cardLast4}</Text>
+                        )}
                     </View>
                 )}
             </Card.Content>
@@ -196,15 +221,28 @@ const MyOrdersScreen = () => {
     )
 
     const showDebugInfo = () => {
-        Alert.alert("Debug Info", debugInfo)
+        Alert.alert(
+            "Información de Depuración",
+            `Usuario: ${currentUser?.email || "No autenticado"}\n\n` +
+            `Órdenes totales: ${orders.length}\n` +
+            `Órdenes filtradas: ${filteredOrders.length}\n` +
+            `Filtro actual: ${statusFilter}\n\n` +
+            `Emails de vendedor encontrados:\n${allVendorEmails.join("\n")}\n\n` +
+            `Detalles:\n${debugInfo}`
+        )
     }
 
     if (loading) {
         return (
             <View style={styles.container}>
-                <Text style={styles.loadingText}>Loading orders...</Text>
-                <Button mode="contained" onPress={showDebugInfo} style={styles.debugButton}>
-                    Show Debug Info
+                <Text style={styles.loadingText}>Cargando órdenes...</Text>
+                <Button 
+                    mode="contained" 
+                    onPress={showDebugInfo} 
+                    style={styles.debugButton}
+                    loading={loading}
+                >
+                    Mostrar Info Debug
                 </Button>
             </View>
         )
@@ -213,41 +251,41 @@ const MyOrdersScreen = () => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <IconButton icon="arrow-left" iconColor="#FFFFFF" size={24} onPress={() => navigation.goBack()} />
-                <Text style={styles.title}>My Orders</Text>
+                <IconButton 
+                    icon="arrow-left" 
+                    iconColor="#FFFFFF" 
+                    size={24} 
+                    onPress={() => navigation.goBack()} 
+                />
+                <Text style={styles.title}>Mis Órdenes</Text>
 
-                <View style={styles.filterContainer}>
-                    <Menu
-                        visible={menuVisible}
-                        onDismiss={() => setMenuVisible(false)}
-                        anchor={
-                            <Button
-                                mode="contained"
-                                onPress={() => setMenuVisible(true)}
-                                style={styles.filterButton}
-                                icon={!menuVisible ? "filter" : null}
-                            >
-                                Filter: {statusOptions.find((opt) => opt.value === statusFilter)?.label}
-                            </Button>
-                        }
-                        anchorPosition="bottom"
-                        contentStyle={styles.menuContent}
-                    >
-                        <ScrollView style={styles.menuScroll}>
-                            {statusOptions.map((option) => (
-                                <Menu.Item
-                                    key={option.value}
-                                    onPress={() => {
-                                        setStatusFilter(option.value)
-                                        setMenuVisible(false)
-                                    }}
-                                    title={option.label}
-                                    style={styles.menuItem}
-                                />
-                            ))}
-                        </ScrollView>
-                    </Menu>
-                </View>
+                <Menu
+                    visible={menuVisible}
+                    onDismiss={() => setMenuVisible(false)}
+                    anchor={
+                        <Button
+                            mode="contained"
+                            onPress={() => setMenuVisible(true)}
+                            style={styles.filterButton}
+                            icon="filter"
+                            labelStyle={{ color: "#FFFFFF" }}
+                        >
+                            {statusOptions.find(opt => opt.value === statusFilter)?.label}
+                        </Button>
+                    }
+                >
+                    {statusOptions.map((option) => (
+                        <Menu.Item
+                            key={option.value}
+                            onPress={() => {
+                                setStatusFilter(option.value)
+                                setMenuVisible(false)
+                            }}
+                            title={option.label}
+                            style={styles.menuItem}
+                        />
+                    ))}
+                </Menu>
             </View>
 
             <ScrollView contentContainerStyle={styles.ordersContainer}>
@@ -255,18 +293,35 @@ const MyOrdersScreen = () => {
                     filteredOrders.map(renderOrder)
                 ) : (
                     <View style={styles.noOrdersContainer}>
-                        <Text style={styles.noOrdersText}>No orders found</Text>
-                        <Text style={styles.noOrdersSubtext}>Make sure you're logged in with the correct account.</Text>
-                        <Button mode="contained" onPress={showDebugInfo} style={styles.debugButton}>
-                            Show Debug Info
-                        </Button>
-                        <Button
-                            mode="contained"
-                            onPress={() => fetchOrders(user?.email)}
-                            style={[styles.debugButton, { marginTop: 10 }]}
+                        <Text style={styles.noOrdersText}>No se encontraron órdenes</Text>
+                        <Text style={styles.noOrdersSubtext}>
+                            {currentUser 
+                                ? `No hay órdenes para ${currentUser.email} con filtro "${statusFilter}"`
+                                : "No estás autenticado"}
+                        </Text>
+                        
+                        <Button 
+                            mode="contained" 
+                            onPress={() => currentUser && fetchOrders(currentUser.email)}
+                            style={styles.refreshButton}
                         >
-                            Refresh Orders
+                            Reintentar
                         </Button>
+                        
+                        <Button 
+                            mode="outlined" 
+                            onPress={showDebugInfo} 
+                            style={styles.debugButton}
+                            textColor="#FFFFFF"
+                        >
+                            Mostrar Info Técnica
+                        </Button>
+
+                        {allVendorEmails.length > 0 && (
+                            <Text style={styles.emailWarning}>
+                                Emails de vendedor encontrados: {allVendorEmails.join(", ")}
+                            </Text>
+                        )}
                     </View>
                 )}
             </ScrollView>
@@ -278,90 +333,105 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#263238",
-        padding: 20,
+        padding: 16,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 30,
+        marginBottom: 20,
         marginTop: 40,
     },
     title: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: "bold",
         color: "#FFFFFF",
-        marginLeft: 10,
+        marginLeft: 12,
         flex: 1,
     },
-    filterContainer: {
-        zIndex: 1,
-    },
     filterButton: {
-        marginLeft: 10,
         backgroundColor: "#6200EE",
-    },
-    menuContent: {
-        maxHeight: 300,
-        width: 200,
-    },
-    menuScroll: {
-        maxHeight: 250,
-    },
-    menuItem: {
-        paddingVertical: 10,
+        borderRadius: 8,
+        marginLeft: 8,
     },
     ordersContainer: {
         paddingBottom: 20,
     },
     orderCard: {
         backgroundColor: "#FFFFFF",
-        borderRadius: 8,
-        marginBottom: 15,
-        elevation: 2,
+        borderRadius: 10,
+        marginBottom: 16,
+        elevation: 3,
     },
     orderTitle: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: "bold",
-        marginBottom: 5,
+        marginBottom: 8,
+        color: "#333333",
+    },
+    orderText: {
+        fontSize: 14,
+        marginBottom: 4,
+        color: "#555555",
     },
     noOrdersContainer: {
-        alignItems: "center",
+        flex: 1,
         justifyContent: "center",
+        alignItems: "center",
         padding: 20,
+        marginTop: 50,
     },
     noOrdersText: {
         fontSize: 18,
+        fontWeight: "bold",
         color: "#FFFFFF",
+        marginBottom: 8,
         textAlign: "center",
-        marginBottom: 10,
     },
     noOrdersSubtext: {
         fontSize: 14,
-        color: "#BBBBBB",
+        color: "#CCCCCC",
         textAlign: "center",
         marginBottom: 20,
+        maxWidth: "80%",
     },
     loadingText: {
-        fontSize: 18,
+        fontSize: 16,
         color: "#FFFFFF",
         textAlign: "center",
-        marginTop: 20,
-        marginBottom: 20,
+        marginVertical: 20,
+    },
+    refreshButton: {
+        backgroundColor: "#6200EE",
+        marginTop: 16,
+        width: "60%",
     },
     debugButton: {
-        backgroundColor: "#FF5722",
+        marginTop: 12,
+        borderColor: "#FFFFFF",
+        width: "60%",
     },
     paymentDetails: {
-        marginTop: 10,
-        paddingTop: 10,
+        marginTop: 12,
+        paddingTop: 12,
         borderTopWidth: 1,
-        borderTopColor: "#e0e0e0",
+        borderTopColor: "#EEEEEE",
     },
     paymentTitle: {
         fontWeight: "bold",
-        marginBottom: 5,
+        color: "#333333",
+        marginBottom: 6,
+    },
+    menuItem: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+    },
+    emailWarning: {
+        fontSize: 12,
+        color: "#FF9800",
+        textAlign: "center",
+        marginTop: 20,
+        maxWidth: "90%",
     },
 })
 
 export default MyOrdersScreen
-

@@ -6,13 +6,14 @@ export default {
     slug: "RawConnect",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/logo2.png",
+    icon: "./assets/logo.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
       image: "./assets/logo.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff"
+      backgroundColor: "#ffffff",
+      "userInterfaceStyle": "automatic"
     },
     ios: {
       supportsTablet: true
@@ -20,7 +21,7 @@ export default {
     android: {
       package: "com.amedina53.RawConnect",
       adaptiveIcon: {
-        foregroundImage: "./assets/logo2.png",
+        foregroundImage: "./assets/logo.png",
         backgroundColor: "#ffffff"
       }
     },

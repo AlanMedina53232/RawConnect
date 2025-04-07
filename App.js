@@ -1,24 +1,29 @@
-import { NavigationContainer } from "@react-navigation/native"
-import { createStackNavigator } from "@react-navigation/stack"
-import { StyleSheet, TouchableOpacity, View } from "react-native"
-import { DefaultTheme, Provider as PaperProvider, Text } from "react-native-paper"
-import Agricultural from "./Buyer/Components/Agricultural"
-import ProductDetails from "./Buyer/Components/ProductDetails"
-import MainBuyer from "./Buyer/MainBuyer"
-import AddProductScreen from "./Producer/Components/add-product-screen"
-import DeleteProduct from "./Producer/Components/DeleteProduct"
-import EditProduct from "./Producer/Components/EditProduct"
-import MyOrdersScreen from "./Producer/Components/my-orders-screen"
-import MyProducts from "./Producer/Components/MyProducts"
-import ProductManagementScreen from "./Producer/Components/product-management-screen"
-import ProfileScreen from "./Producer/Components/profile-screen"
-import { default as HomeScreen, default as MainProducer } from "./Producer/MainProducer"
-import Login from "./screens/login"
-import Principal from "./screens/principal"
-import Register from "./screens/register"
-import OrderDetails from "./Producer/Components/OrderDetails"
+import React, { useCallback, useEffect, useState } from 'react';
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { DefaultTheme, Provider as PaperProvider, Text } from "react-native-paper";
+import * as SplashScreen from 'expo-splash-screen';
+import AppInitializer from "./components/AppInitializer";
 
-const Stack = createStackNavigator()
+// Screens
+import Agricultural from "./Buyer/Components/Agricultural";
+import ProductDetails from "./Buyer/Components/ProductDetails";
+import MainBuyer from "./Buyer/MainBuyer";
+import AddProductScreen from "./Producer/Components/add-product-screen";
+import DeleteProduct from "./Producer/Components/DeleteProduct";
+import EditProduct from "./Producer/Components/EditProduct";
+import MyOrdersScreen from "./Producer/Components/my-orders-screen";
+import MyProducts from "./Producer/Components/MyProducts";
+import ProductManagementScreen from "./Producer/Components/product-management-screen";
+import ProfileScreen from "./Producer/Components/profile-screen";
+import { default as HomeScreen, default as MainProducer } from "./Producer/MainProducer";
+import Login from "./screens/login";
+import Principal from "./screens/principal";
+import Register from "./screens/register";
+import OrderDetails from "./Producer/Components/OrderDetails";
+
+const Stack = createStackNavigator();
 
 const theme = {
   ...DefaultTheme,
@@ -29,11 +34,18 @@ const theme = {
     background: "#f8f9fa",
     surface: "#FFFFFF",
   },
-}
+};
 
-function App() {
+// Keep the splash screen visible while we load resources
+SplashScreen.preventAutoHideAsync();
+
+function AppContent() {
+  const onLayoutRootView = useCallback(async () => {
+    await SplashScreen.hideAsync();
+  }, []);
+
   return (
-    <PaperProvider theme={theme}>
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName="Principal"
@@ -64,13 +76,12 @@ function App() {
             name="Principal"
             component={Principal}
             options={({ navigation }) => ({
-              headerTitle: () => null, // Remove the title
+              headerTitle: () => null,
               headerRight: () => (
                 <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                   <Text style={styles.loginText}>Login</Text>
                 </TouchableOpacity>
               ),
-              // Center the button by adding left space
               headerLeft: () => <View style={{ width: 24, marginLeft: 15 }} />,
             })}
           />
@@ -93,52 +104,36 @@ function App() {
             component={ProfileScreen}
             options={{
               title: "My Profile",
-              headerStyle: {
-                backgroundColor: "#2c3e50",
-              },
+              headerStyle: { backgroundColor: "#2c3e50" },
               headerTintColor: "#ecf0f1",
             }}
           />
           <Stack.Screen
             name="ProducerHome"
             component={HomeScreen}
-            options={{
-              headerShown: false,
-              title: "Producer Dashboard",
-            }}
+            options={{ headerShown: false, title: "Producer Dashboard" }}
           />
           <Stack.Screen
             name="ProductManagement"
             component={ProductManagementScreen}
-            options={{
-              headerShown: false,
-              title: "Product Management",
-            }}
+            options={{ headerShown: false, title: "Product Management" }}
           />
           <Stack.Screen
             name="AddProduct"
             component={AddProductScreen}
-            options={{
-              headerShown: false,
-              title: "Add Product",
-            }}
+            options={{ headerShown: false, title: "Add Product" }}
           />
           <Stack.Screen
             name="MyOrders"
             component={MyOrdersScreen}
-            options={{
-              headerShown: false,
-              title: "My Orders",
-            }}
+            options={{ headerShown: false, title: "My Orders" }}
           />
           <Stack.Screen
             name="MyProducts"
             component={MyProducts}
             options={{
               title: "My Products",
-              headerStyle: {
-                backgroundColor: "#2c3e50",
-              },
+              headerStyle: { backgroundColor: "#2c3e50" },
               headerTintColor: "#ecf0f1",
             }}
           />
@@ -147,9 +142,7 @@ function App() {
             component={EditProduct}
             options={{
               title: "Edit Product",
-              headerStyle: {
-                backgroundColor: "#2c3e50",
-              },
+              headerStyle: { backgroundColor: "#2c3e50" },
               headerTintColor: "#ecf0f1",
             }}
           />
@@ -158,9 +151,7 @@ function App() {
             component={DeleteProduct}
             options={{
               title: "Delete Product",
-              headerStyle: {
-                backgroundColor: "#2c3e50",
-              },
+              headerStyle: { backgroundColor: "#2c3e50" },
               headerTintColor: "#ecf0f1",
             }}
           />
@@ -169,19 +160,26 @@ function App() {
             component={OrderDetails}
             options={{
               title: "Order Details",
-              headerStyle: {
-                backgroundColor: "#2c3e50",
-              },
+              headerStyle: { backgroundColor: "#2c3e50" },
               headerTintColor: "#ecf0f1",
             }}
           />
         </Stack.Navigator>
       </NavigationContainer>
-    </PaperProvider>
-  )
+    </View>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <PaperProvider theme={theme}>
+      <AppInitializer>
+        <AppContent />
+      </AppInitializer>
+    </PaperProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   loginText: {
     marginRight: 25,
@@ -194,3 +192,5 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 });
+
+export default App;
