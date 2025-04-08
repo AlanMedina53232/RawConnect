@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const BACKEND_URL = 'http://192.168.0.127:3001'; // CAMBIAR LA IP A LA DE TU COMPUTADORA, EL PUERTO NO SE CAMBIAA
+const BACKEND_URL = 'http://192.168.0.127:3001'; // CAMBIAR LA IP A LA DE TU COMPUTADORA, EL PUERTO NO SE CAMBIAA (:3001 MANTIENE IGUAL)
 
 const PayPalCheckout = ({ amount, onPaymentSuccess, onClose = () => { } }) => {
   const [approvalUrl, setApprovalUrl] = useState(null);
