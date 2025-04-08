@@ -76,67 +76,6 @@ export default function Login({ navigation }) {
     }
   };
 
-  const handlePredefinedLoginpRroducer = async () => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, predefinedUserProd.email, predefinedUserProd.password);
-      const currentUser = userCredential.user;
-
-      const docRef = doc(db, "Roles", currentUser.email);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const role = docSnap.data().role;
-
-        if (role === 1) {
-          navigation.navigate('MainBuyer');
-        } else if (role === 2) {
-          navigation.navigate('MainProducer');
-        } else {
-          setError("Invalid role assigned to this user.");
-        }
-      } else {
-        setError("User not found in roles collection.");
-      }
-    } catch (error) {
-      setError("Login failed. Please check your credentials.");
-    }
-  };
-
-  const predefinedUserProd = {
-    email: "productor@gmail.com",
-    password: "Prod123456&"
-  };
-
-  const handlePredefinedLoginpBuyer = async () => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, predefinedUserBuyer.email, predefinedUserBuyer.password);
-      const currentUser = userCredential.user;
-
-      const docRef = doc(db, "Roles", currentUser.email);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const role = docSnap.data().role;
-
-        if (role === 1) {
-          navigation.navigate('MainBuyer');
-        } else if (role === 2) {
-          navigation.navigate('MainProducer');
-        } else {
-          setError("Invalid role assigned to this user.");
-        }
-      } else {
-        setError("User not found in roles collection.");
-      }
-    } catch (error) {
-      setError("Login failed. Please check your credentials.");
-    }
-  };
-
-  const predefinedUserBuyer = {
-    email: "briankkk1@gmail.com",
-    password: "B12345"
-  };
 
   if (loading) {
     return (
@@ -242,27 +181,7 @@ export default function Login({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.predefinedButtonsContainer}>
-                <Button
-                  icon="account"
-                  mode="outlined"
-                  onPress={handlePredefinedLoginpRroducer}
-                  style={styles.predefinedButton}
-                  textColor="#2c3e50"
-                >
-                  Login Producer
-                </Button>
-
-                <Button
-                  icon="account"
-                  mode="outlined"
-                  onPress={handlePredefinedLoginpBuyer}
-                  style={styles.predefinedButton}
-                  textColor="#2c3e50"
-                >
-                  Login Buyer
-                </Button>
-              </View>
+             
             </View>
           </Box>
 
